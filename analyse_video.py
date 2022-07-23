@@ -6,17 +6,21 @@
 #####################################################
 
 # First import the library
+from turtle import color
 import pyrealsense2 as rs
 # Import Numpy for easy array manipulation
 import numpy as np
 # Import OpenCV for easy image rendering
 import cv2
 
-import time
-
 # Import multiprocessing
-import multiprocessing as mp
+# import multiprocessing as mp
 
+# Math time
+import matplotlib.pyplot as plt
+from scipy import signal as sp
+
+# OS time
 # Import argparse for command-line options
 import argparse
 # Import os.path for file path manipulation
@@ -40,6 +44,7 @@ def remove_sound(matrix):
             if x[j] == 0:
                 matrix[i][j] = previous_j
             previous_j = matrix[i][j]
+    return matrix
 
 def real_distance(matrix):
     # Merk op, deze formule maakt gebruik van de hoogte van de camera. 
@@ -60,8 +65,8 @@ def real_distance(matrix):
     return np.vectorize(pythagoras)(matrix)
 
 def remove_ground(matrix):
-    def compare(x, est):
-        if np.absolute(x - est) <= 250: return 0 # if difference bigger than 15cm, replace with 0
+    def compare(x, mean):
+        if np.absolute(x - mean) <= 150: return 0 # if difference bigger than 15cm, replace with 0
         else: return x
     vcompare = np.vectorize(compare)
     # ground_det_average = []
@@ -76,18 +81,16 @@ def remove_ground(matrix):
 
     # ground_det_average = np.array(ground_det_average)
     # return ground_det_average
-    ground_det_mean = []
-    for row in matrix:
-        # row_mean = np.mean(row[row != 0])
-        row_mean = np.mean(row)
+    for i in range(len(matrix)):
+    # for i in range(len(matrix)):
+        row = matrix[i]
+        row_mean = np.mean(row[row != 0])
+        # row_mean = np.mean(row)
         if not np.isnan(row_mean):
-            new_row = vcompare(row, row_mean)
-            ground_det_mean.append(new_row)
-        else:
-            ground_det_mean.append(row)
+            matrix[i] = vcompare(row, row_mean)
+            # matrix[i:i+mean_of_i_rows] = vcompare(row, row_mean)
     
-    ground_det_mean = np.array(ground_det_mean)
-    return ground_det_mean
+    return matrix
 
 def remove_background(depth_matrix, matrix_remove_background):
     # Getting the depth sensor's depth scale (see rs-align example for explanation)
@@ -105,10 +108,127 @@ def colorize_depth(matrix, alpha_value = 0.1):
     #tilde will reverse the grayscale (from 0- 255) as this is better for the colormap (red close, blue far)
     return cv2.applyColorMap(~cv2.convertScaleAbs(matrix, alpha=alpha_value), cv2.COLORMAP_TURBO)
 
+import sys
+from numpy import NaN, Inf, arange, isscalar, asarray, array
+
+
+# https://gist.github.com/endolith/250860
+# def peakdet(v, delta, x = None):
+#     """
+#     Converted from MATLAB script at http://billauer.co.il/peakdet.html
+    
+#     Returns two arrays
+    
+#     function [maxtab, mintab]=peakdet(v, delta, x)
+#     %PEAKDET Detect peaks in a vector
+#     %        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
+#     %        maxima and minima ("peaks") in the vector V.
+#     %        MAXTAB and MINTAB consists of two columns. Column 1
+#     %        contains indices in V, and column 2 the found values.
+#     %      
+#     %        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
+#     %        in MAXTAB and MINTAB are replaced with the corresponding
+#     %        X-values.
+#     %
+#     %        A point is considered a maximum peak if it has the maximal
+#     %        value, and was preceded (to the left) by a value lower by
+#     %        DELTA.
+    
+#     % Eli Billauer, 3.4.05 (Explicitly not copyrighted).
+#     % This function is released to the public domain; Any use is allowed.
+    
+#     """
+#     maxtab = []
+#     mintab = []
+       
+#     if x is None:
+#         x = arange(len(v))
+    
+#     v = asarray(v)
+    
+#     if len(v) != len(x):
+#         sys.exit('Input vectors v and x must have same length')
+    
+#     if not isscalar(delta):
+#         sys.exit('Input argument delta must be a scalar')
+    
+#     if delta <= 0:
+#         sys.exit('Input argument delta must be positive')
+    
+#     mn, mx = Inf, -Inf
+#     mnpos, mxpos = NaN, NaN
+    
+#     lookformax = True
+    
+#     for i in arange(len(v)):
+#         this = v[i]
+#         if this > mx:
+#             mx = this
+#             mxpos = x[i]
+#         if this < mn:
+#             mn = this
+#             mnpos = x[i]
+        
+#         if lookformax:
+#             if this < mx-delta:
+#                 maxtab.append((mxpos, mx))
+#                 mn = this
+#                 mnpos = x[i]
+#                 lookformax = False
+#         else:
+#             if this > mn+delta:
+#                 mintab.append((mnpos, mn))
+#                 mx = this
+#                 mxpos = x[i]
+#                 lookformax = True
+
+#     return array(maxtab), array(mintab)
+
+def split_equal(matrix):
+    # Cleanup Manual
+    matrix = matrix[:, 50:-50] # cut sides
+
+    # Cleanup bottom
+    non_zero_bottom_index = np.nonzero(np.count_nonzero(matrix, axis=1))[0][-1]
+    matrix = matrix[:non_zero_bottom_index, :]
+
+    # Cleanup Auto
+    non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
+    # maxtab, mintab = peakdet(non_zero_column, 0.5)
+
+    # plt.plot(non_zero_column)
+    # plt.scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
+    # plt.scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
+    
+    # plt.show()
+
+    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50)
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.95)
+
+    left_ips = left_ips.astype(int)
+    right_ips = right_ips.astype(int)
+
+    margin = 10
+
+    left_valley = np.array([left_ips[0], right_ips[0]]) 
+    right_valley = np.array([left_ips[1], right_ips[1]])
+
+    # display plot
+    plt.plot(non_zero_column)
+    plt.scatter(peaks, non_zero_column[peaks], color="blue")
+    plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
+    plt.show()
+
+    left = matrix[:, left_valley[0]:left_valley[1]]
+    right = matrix[:, right_valley[0]:right_valley[1]]
+
+    return left, right
+
 # Streaming loop
 def main():
-    cpu_count = mp.cpu_count()
-    print(f"cpu count is: {cpu_count}")
+    # cpu_count = mp.cpu_count()
+    # print(f"cpu count is: {cpu_count}")
     
     # Create object for parsing command-line options
     parser = argparse.ArgumentParser(description="Read recorded bag file and display depth stream in jet colormap.\
@@ -149,15 +269,22 @@ def main():
         playback = profile.get_device().as_playback()
         playback.set_real_time(False)
 
-        cv2.namedWindow('Image Feed', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('Image Feed', 640,480)
         i = 0
+        print(f"Skipping to frame 100")
+        while i < 80:
+            i += 1
+            # Get frameset of color and depth
+            frames = pipeline.wait_for_frames()
+            # frames.get_depth_frame() is a 640x480 depth image
+
+
+        cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
         while True:
             i += 1
             print(f"frame: {i}")
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
-            # frames.get_depth_frame() is a 640x360 depth image
 
             # Get depth frame
             depth_frame = frames.get_depth_frame()
@@ -174,6 +301,9 @@ def main():
             # depth_image = np.vstack(results)
 
 
+            # Remove Sound
+            # depth_image_rg = remove_sound(depth_image)
+
             # Real Distance
             # depth_image = real_distance(depth_image)
 
@@ -185,15 +315,22 @@ def main():
             depth_image_bg = remove_background(depth_image_rg, depth_image_rg)
             # depth_image_rg = remove_ground(depth_image_bg)
 
+            # Sides Removed
+            # depth_image_left, depth_image_right = split_equal(depth_image_bg)
+            depth_image_left, depth_image_right = split_equal(depth_image_bg)
 
             # Render images:
             #   depth align to color on left
             #   depth on right
-            depth_colormap = colorize_depth(np.vstack(depth_image_bg))
+            depth_colormap_left = colorize_depth(np.vstack(depth_image_left))
+            depth_colormap_right = colorize_depth(np.vstack(depth_image_right))
             # depth_colormap = colorize_depth(np.vstack(depth_image_rg))
 
-
-            cv2.imshow('Image Feed', depth_colormap)
+            # note that left leg = right image and vise versa
+            # cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape)
+            # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape)
+            cv2.imshow('Image Feed Left leg', depth_colormap_right)
+            cv2.imshow('Image Feed Right leg', depth_colormap_left)
             key = cv2.waitKey(1)
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
@@ -201,8 +338,8 @@ def main():
                 break
             
             # Print depth_image matrix to csv
-            if key & 0xFF == ord('a') or i == 150:
-                matrix_to_csv(depth_image, "matrix.csv")
+            if key & 0xFF == ord('a'):
+                matrix_to_csv(depth_image_sides, "matrix.csv")
 
             # Print depth_image matrix no background 
             if key & 0xFF == ord('b'):
