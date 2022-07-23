@@ -101,15 +101,20 @@ def remove_background(depth_matrix, matrix_remove_background):
     clipping_distance_in_meters = 1.5 #1 meter
     clipping_distance = clipping_distance_in_meters / depth_scale
 
+    # minimum distance of matrix = 340 (foot min distance), smaller than this is noise
+    min_distance = 330
+
+    # Notice that there is still noise
+
     grey_color = 0
-    return np.where((depth_matrix > clipping_distance) | (depth_matrix <= 0), grey_color, matrix_remove_background)
+    return np.where((depth_matrix > clipping_distance) | (depth_matrix <= min_distance) , grey_color, matrix_remove_background)
 
 def colorize_depth(matrix, alpha_value = 0.1):
     #tilde will reverse the grayscale (from 0- 255) as this is better for the colormap (red close, blue far)
     return cv2.applyColorMap(~cv2.convertScaleAbs(matrix, alpha=alpha_value), cv2.COLORMAP_TURBO)
 
-import sys
-from numpy import NaN, Inf, arange, isscalar, asarray, array
+# import sys
+# from numpy import NaN, Inf, arange, isscalar, asarray, array
 
 
 # https://gist.github.com/endolith/250860
@@ -345,7 +350,7 @@ def main():
             
             # Print depth_image matrix to csv
             if key & 0xFF == ord('a'):
-                matrix_to_csv(depth_image_sides, "matrix.csv")
+                matrix_to_csv(depth_image_right, "matrix.csv")
 
             # Print depth_image matrix no background 
             if key & 0xFF == ord('b'):

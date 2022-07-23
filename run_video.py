@@ -31,6 +31,12 @@ if os.path.splitext(args.input)[1] != ".bag":
     print("The given file is not of correct file format.")
     print("Only .bag files are accepted")
     exit()
+
+
+def matrix_to_csv(matrix, filename):
+    np.savetxt(filename, matrix, delimiter=';', fmt='%i')
+
+
 try:
     # Create pipeline
     pipeline = rs.pipeline()
@@ -77,7 +83,11 @@ try:
         if key == 27:
             cv2.destroyAllWindows()
             break
-            
+
+        # Print depth_image matrix to csv
+        if key & 0xFF == ord('a'):
+            matrix_to_csv(depth_frame.get_data(), "matrix.csv")
+
         i = i + 1
 
 finally:
