@@ -214,11 +214,11 @@ def split_equal(matrix):
     right_valley = np.array([left_ips[1], right_ips[1]])
 
     # display plot
-    plt.plot(non_zero_column)
-    plt.scatter(peaks, non_zero_column[peaks], color="blue")
-    plt.scatter(left_valley, non_zero_column[left_valley], color="red")
-    plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
-    plt.show()
+    # plt.plot(non_zero_column)
+    # plt.scatter(peaks, non_zero_column[peaks], color="blue")
+    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    # plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
+    # plt.show()
 
     left = matrix[:, left_valley[0]:left_valley[1]]
     right = matrix[:, right_valley[0]:right_valley[1]]
