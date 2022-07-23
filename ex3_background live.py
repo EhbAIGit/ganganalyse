@@ -12,6 +12,9 @@ import numpy as np
 # Import OpenCV for easy image rendering
 import cv2
 
+# GPU
+# from numba import jit, cuda
+
 import time
 import math
 
@@ -47,9 +50,6 @@ if device_product_line == 'L500':
     config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
 else:
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-
-# Enable recording
-config.enable_record_to_file('test.bag')
 
 # Start streaming
 profile = pipeline.start(config)
@@ -179,9 +179,9 @@ try:
         depth_image = np.asanyarray(aligned_depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
 
-        # Remove background - Set pixels further than clipping_distance to grey
-        grey_color = 50
+        # depth_image = remove_ground(depth_image, "mean")
 
+        # Remove background - Set pixels further than clipping_distance to grey
         depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
         bg_removed = remove_background(depth_image_3d, color_image)
 

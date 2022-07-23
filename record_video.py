@@ -63,6 +63,9 @@ clipping_distance = clipping_distance_in_meters / depth_scale
 align_to = rs.stream.color
 align = rs.align(align_to)
 
+def matrix_to_csv(matrix, filename):
+    np.savetxt(filename, matrix, delimiter=';', fmt='%i')
+
 # Streaming loop
 try:
     while True:
@@ -97,5 +100,8 @@ try:
         if key & 0xFF == ord('q') or key == 27:
             cv2.destroyAllWindows()
             break
+            
+        if key & 0xFF == ord('a'):
+            matrix_to_csv(depth_image, "matrix.csv")
 finally:
     pipeline.stop()
