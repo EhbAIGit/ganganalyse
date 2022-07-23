@@ -280,6 +280,9 @@ def main():
 
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
+
+        # cv2.moveWindow('Image Feed Right leg', 1300, 400)
+        # cv2.moveWindow('Image Feed Left leg', 1500, 400)
         while True:
             i += 1
             print(f"frame: {i}")
@@ -327,8 +330,10 @@ def main():
             # depth_colormap = colorize_depth(np.vstack(depth_image_rg))
 
             # note that left leg = right image and vise versa
-            # cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape)
-            # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape)
+            # cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[::-1])
+            # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[::-1])
+            # cv2.resizeWindow('Image Feed Left leg', 400, 800)
+            # cv2.resizeWindow('Image Feed Right leg', 400, 800)
             cv2.imshow('Image Feed Left leg', depth_colormap_right)
             cv2.imshow('Image Feed Right leg', depth_colormap_left)
             key = cv2.waitKey(1)
