@@ -330,6 +330,7 @@ def main():
             # depth_colormap = colorize_depth(np.vstack(depth_image_rg))
 
             # note that left leg = right image and vise versa
+            # reshape needs to be bigger
             # cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[::-1])
             # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[::-1])
             # cv2.resizeWindow('Image Feed Left leg', 400, 800)
