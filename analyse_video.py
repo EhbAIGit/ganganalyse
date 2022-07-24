@@ -189,6 +189,17 @@ def colorize_depth(matrix, alpha_value = 0.1):
 
 #     return array(maxtab), array(mintab)
 
+def add_margin(array, margin):
+    if array[0] - margin > 0:
+        array[0] = array[0] - margin
+    else:
+        array[0] = 0
+    if array[1] + margin < 540: # image width
+        array[1] = array[1] + margin
+    else:
+        array[1] = 540
+    return array
+
 def split_equal(matrix):
     # Cleanup Manual
     matrix = matrix[:, 50:-50] # cut sides
@@ -207,23 +218,23 @@ def split_equal(matrix):
     
     # plt.show()
 
-    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50)
-    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.95)
+    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10) # Explain these numbers with examples
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8)
 
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
 
-    margin = 10
+    margin = 20
 
-    left_valley = np.array([left_ips[0], right_ips[0]]) 
-    right_valley = np.array([left_ips[1], right_ips[1]])
+    left_valley = add_margin([left_ips[0], right_ips[0]], margin)
+    right_valley = add_margin([left_ips[1], right_ips[1]], margin)
 
     # display plot
-    # plt.plot(non_zero_column)
-    # plt.scatter(peaks, non_zero_column[peaks], color="blue")
-    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
-    # plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
-    # plt.show()
+    plt.plot(non_zero_column)
+    plt.scatter(peaks, non_zero_column[peaks], color="blue")
+    plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
+    plt.show()
 
     left = matrix[:, left_valley[0]:left_valley[1]]
     right = matrix[:, right_valley[0]:right_valley[1]]
@@ -276,7 +287,7 @@ def main():
 
         i = 0
         print(f"Skipping to frame 100")
-        while i < 80:
+        while i < 40:
             i += 1
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
