@@ -219,7 +219,7 @@ def split_equal(matrix):
     # plt.show()
 
     peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10) # Explain these numbers with examples
-    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8)
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8) # Explain these numbers with examples
 
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
@@ -230,16 +230,19 @@ def split_equal(matrix):
     right_valley = add_margin([left_ips[1], right_ips[1]], margin)
 
     # display plot
-    plt.plot(non_zero_column)
-    plt.scatter(peaks, non_zero_column[peaks], color="blue")
-    plt.scatter(left_valley, non_zero_column[left_valley], color="red")
-    plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
-    plt.show()
+    # plt.plot(non_zero_column)
+    # plt.scatter(peaks, non_zero_column[peaks], color="blue")
+    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    # plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
+    # plt.show()
 
-    left = matrix[:, left_valley[0]:left_valley[1]]
-    right = matrix[:, right_valley[0]:right_valley[1]]
+    left_matrix = matrix[:, left_valley[0]:left_valley[1]]
+    right_matrix = matrix[:, right_valley[0]:right_valley[1]]
 
-    return left, right
+    left_peak_matrix = matrix[:, peaks[0]]
+    right_peak_matrix = matrix[:, peaks[1]]
+
+    return left_matrix, right_matrix, non_zero_column[peaks], left_peak_matrix, right_peak_matrix
 
 # Streaming loop
 def main():
@@ -286,8 +289,8 @@ def main():
         playback.set_real_time(False)
 
         i = 0
-        print(f"Skipping to frame 100")
-        while i < 40:
+        print(f"Skipping to frame 70")
+        while i < 70:
             i += 1
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
@@ -297,8 +300,13 @@ def main():
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
 
-        # cv2.moveWindow('Image Feed Right leg', 1300, 400)
-        # cv2.moveWindow('Image Feed Left leg', 1500, 400)
+        max_right = []
+        max_left = []
+        min_right = []
+        min_left = []
+        avg_right = []
+        avg_left = []
+
         while True:
             i += 1
             print(f"frame: {i}")
@@ -320,8 +328,11 @@ def main():
             # depth_image = np.vstack(results)
 
 
-            # Remove Sound
-            # depth_image_rg = remove_sound(depth_image)
+            ################
+            # Remove Noise #
+            ################
+            # Add Missing Values
+            # depth_image = remove_sound(depth_image)
 
             # Real Distance
             # depth_image = real_distance(depth_image)
@@ -334,11 +345,34 @@ def main():
             depth_image_bg = remove_background(depth_image_rg, depth_image_rg)
             # depth_image_rg = remove_ground(depth_image_bg)
 
-            # Sides Removed
+            ##############
+            # Split View #
+            ##############
             # depth_image_left, depth_image_right = split_equal(depth_image_bg)
-            depth_image_left, depth_image_right = split_equal(depth_image_bg)
+            depth_image_left, depth_image_right, peak_values, left_peak_matrix, right_peak_matrix  = split_equal(depth_image_bg)
 
-            # Render images:
+            ############
+            # Analysis #
+            ############
+            # Staptijd ()
+            avg_right.append(np.average(depth_image_left[depth_image_left!=0]))
+            avg_left.append(np.average(depth_image_right[depth_image_right!=0]))
+
+            # Staplengte (afstand tussen afstand van de linker en rechter voet bij initial contact)
+            max_right.append(np.max(left_peak_matrix[left_peak_matrix!=0]))
+            max_left.append(np.max(right_peak_matrix[right_peak_matrix!=0]))
+            
+            min_right.append(np.min(depth_image_left[depth_image_left!=0]))
+            min_left.append(np.min(depth_image_right[depth_image_right!=0]))
+
+            # Stapbreedte (moment dat voeten naast elkaar staan -> hoe breed uit elkaar?)
+            if peak_values[0] in range(peak_values[1] - 5, peak_values[1] + 5):
+                print(True)
+
+
+            #################
+            # Render images #
+            #################
             #   depth align to color on left
             #   depth on right
             depth_colormap_left = colorize_depth(np.vstack(depth_image_left))
@@ -349,16 +383,20 @@ def main():
             # reshape needs to be bigger
             # cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[::-1])
             # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[::-1])
-            # cv2.resizeWindow('Image Feed Left leg', 400, 800)
-            # cv2.resizeWindow('Image Feed Right leg', 400, 800)
+            cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[1] * 3, depth_image_right.shape[0] * 3)
+            cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[1] * 3, depth_image_left.shape[0] * 3)
             cv2.imshow('Image Feed Left leg', depth_colormap_right)
             cv2.imshow('Image Feed Right leg', depth_colormap_left)
+
+            #######################
+            # Wait for keypresses #
+            #######################
             key = cv2.waitKey(1)
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
                 cv2.destroyAllWindows()
                 break
-            
+
             # Print depth_image matrix to csv
             if key & 0xFF == ord('a'):
                 matrix_to_csv(depth_image_right, "matrix.csv")
@@ -417,6 +455,25 @@ def main():
                 depth_colormap_cc_average_bg = colorize_depth(ground_det_average_bg, 0.1)
                 cv2.namedWindow('Ground_removed_cc_average', cv2.WINDOW_NORMAL)
                 cv2.imshow('Ground_removed_cc_average', depth_colormap_cc_average_bg)
+            
+            # Display Average
+            if key & 0xFF == ord('h'):
+                plt.plot(avg_right, color="red")
+                plt.plot(avg_left, color="blue")
+                plt.show()
+
+            # Display Maximum
+            if key & 0xFF == ord('i'):
+                plt.plot(max_right, color="red")
+                plt.plot(max_left, color="blue")
+                plt.show()
+
+            # Display Minimum (of most values)
+            if key & 0xFF == ord('j'):
+                plt.plot(min_right, color="red")
+                plt.plot(min_left, color="blue")
+                plt.show()
+
 
 
 
