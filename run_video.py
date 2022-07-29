@@ -60,8 +60,8 @@ try:
     # Create colorizer object
     colorizer = rs.colorizer()
 
-    fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-    out = cv2.VideoWriter('videos/original.avi', fourcc, 30, (640, 480))
+    # fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+    # out = cv2.VideoWriter('videos/original.avi', fourcc, 30, (640, 480))
 
     i = 0
     # Streaming loop
@@ -81,7 +81,7 @@ try:
 
         # Render image in opencv window
         cv2.imshow("Depth Stream", depth_color_image)
-        out.write(depth_color_image)
+        # out.write(depth_color_image)
         key = cv2.waitKey(1)
         # if pressed escape exit program
         if key == 27:
@@ -92,10 +92,13 @@ try:
         if key & 0xFF == ord('a'):
             matrix_to_csv(depth_frame.get_data(), "matrix.csv")
 
+        # if i == 97 or i == 171 or i == 244 or i == 307:
+        #     matrix_to_csv(depth_frame.get_data(), f"matrix_{i}.csv")
+
         i = i + 1
         if i == 367:
             break
-    out.release()
+    # out.release()
     cv2.destroyAllWindows()
 
 finally:
