@@ -1,0 +1,528 @@
+## License: Apache 2.0. See LICENSE file in root directory.
+## Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+
+#####################################################
+##              Align Depth to Color               ##
+#####################################################
+
+# First import the library
+from turtle import color
+import pyrealsense2 as rs
+# Import Numpy for easy array manipulation
+import numpy as np
+# Import OpenCV for easy image rendering
+import cv2
+
+# Import multiprocessing
+# import multiprocessing as mp
+
+# Math time
+import matplotlib.pyplot as plt
+from scipy import signal as sp
+
+# OS time
+# Import argparse for command-line options
+import argparse
+# Import os.path for file path manipulation
+import os.path
+
+def matrix_to_csv(matrix, filename):
+    np.savetxt(filename, matrix, delimiter=';', fmt='%i')
+
+def remove_sound(matrix):
+    y_min = 289 ## Dont do correction above certain pixel in image 
+    y_axis = range(len(matrix))[y_min:]
+    for i in y_axis:
+        x = matrix[i]
+        previous_j = x[0]
+        if previous_j == 0:
+            for k in range(1,len(x)):
+                if x[k] != 0:
+                    previous_j = x[k]
+                    break
+        for j in range(1,len(x)):
+            if x[j] == 0:
+                matrix[i][j] = previous_j
+            previous_j = matrix[i][j]
+    return matrix
+
+def real_distance(matrix):
+    # Merk op, deze formule maakt gebruik van de hoogte van de camera. 
+    # Een alternatief is gebruik maken van de IMU van de camera om zo de hoek van de kanteling naar voor te meten
+    # en dan sin(alpha) = Overstaande zijde / Schuine Zijde <=> sin(alpha) * Schuine Zijde
+    # Dit is altijd zo lang de camera onder een punt staat, Eens hieboven moeten we gebruik maken van
+    # cos(alpha) = Aanliggende zijde / Schuine Zijde
+    # Deze manier brengt ons tot een accurater en automatischer resultaat
+    def pythagoras(c):
+        a = 230 # Height of the camera
+        # a^2 + b^2 = c^2 -> (c^2 - a^2)^0.5 = b
+        # c = distance to camera (points of the depth matrix)
+        b_exp = (c * c)  - (a * a)
+        if b_exp <= 0:
+            return 0
+        else:
+            return np.sqrt(b_exp)
+    return np.vectorize(pythagoras)(matrix)
+
+def remove_ground(matrix):
+    def compare(x, mean):
+        if np.absolute(x - mean) <= 150: return 0 # if difference bigger than 15cm, replace with 0
+        else: return x
+    vcompare = np.vectorize(compare)
+    # ground_det_average = []
+    # for row in matrix:
+    #     # row_average = np.average(row[row != 0])
+    #     row_average = np.average(row)
+    #     if not np.isnan(row_average):
+    #         new_row = vcompare(row, row_average)
+    #         ground_det_average.append(new_row)
+    #     else:
+    #         ground_det_average.append(row)
+
+    # ground_det_average = np.array(ground_det_average)
+    # return ground_det_average
+    for i in range(len(matrix)):
+    # for i in range(len(matrix)):
+        row = matrix[i]
+        row_mean = np.mean(row[row != 0])
+        # row_mean = np.mean(row)
+        if not np.isnan(row_mean):
+            matrix[i] = vcompare(row, row_mean)
+            # matrix[i:i+mean_of_i_rows] = vcompare(row, row_mean)
+    
+    return matrix
+
+def remove_background(depth_matrix, matrix_remove_background):
+    # Getting the depth sensor's depth scale (see rs-align example for explanation)
+    depth_scale = 0.0010000000474974513
+
+    # We will be removing the background of objects more than
+    #  clipping_distance_in_meters meters away
+    clipping_distance_in_meters = 1.5 #1 meter
+    clipping_distance = clipping_distance_in_meters / depth_scale
+
+    # minimum distance of matrix = 340 (foot min distance), smaller than this is noise
+    min_distance = 330
+
+    # Notice that there is still noise
+
+    grey_color = 0
+    return np.where((depth_matrix > clipping_distance) | (depth_matrix <= min_distance) , grey_color, matrix_remove_background)
+
+def colorize_depth(matrix, alpha_value = 0.1):
+    #tilde will reverse the grayscale (from 0- 255) as this is better for the colormap (red close, blue far)
+    return cv2.applyColorMap(~cv2.convertScaleAbs(matrix, alpha=alpha_value), cv2.COLORMAP_TURBO)
+
+# import sys
+# from numpy import NaN, Inf, arange, isscalar, asarray, array
+
+
+# https://gist.github.com/endolith/250860
+# def peakdet(v, delta, x = None):
+#     """
+#     Converted from MATLAB script at http://billauer.co.il/peakdet.html
+    
+#     Returns two arrays
+    
+#     function [maxtab, mintab]=peakdet(v, delta, x)
+#     %PEAKDET Detect peaks in a vector
+#     %        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
+#     %        maxima and minima ("peaks") in the vector V.
+#     %        MAXTAB and MINTAB consists of two columns. Column 1
+#     %        contains indices in V, and column 2 the found values.
+#     %      
+#     %        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
+#     %        in MAXTAB and MINTAB are replaced with the corresponding
+#     %        X-values.
+#     %
+#     %        A point is considered a maximum peak if it has the maximal
+#     %        value, and was preceded (to the left) by a value lower by
+#     %        DELTA.
+    
+#     % Eli Billauer, 3.4.05 (Explicitly not copyrighted).
+#     % This function is released to the public domain; Any use is allowed.
+    
+#     """
+#     maxtab = []
+#     mintab = []
+       
+#     if x is None:
+#         x = arange(len(v))
+    
+#     v = asarray(v)
+    
+#     if len(v) != len(x):
+#         sys.exit('Input vectors v and x must have same length')
+    
+#     if not isscalar(delta):
+#         sys.exit('Input argument delta must be a scalar')
+    
+#     if delta <= 0:
+#         sys.exit('Input argument delta must be positive')
+    
+#     mn, mx = Inf, -Inf
+#     mnpos, mxpos = NaN, NaN
+    
+#     lookformax = True
+    
+#     for i in arange(len(v)):
+#         this = v[i]
+#         if this > mx:
+#             mx = this
+#             mxpos = x[i]
+#         if this < mn:
+#             mn = this
+#             mnpos = x[i]
+        
+#         if lookformax:
+#             if this < mx-delta:
+#                 maxtab.append((mxpos, mx))
+#                 mn = this
+#                 mnpos = x[i]
+#                 lookformax = False
+#         else:
+#             if this > mn+delta:
+#                 mintab.append((mnpos, mn))
+#                 mx = this
+#                 mxpos = x[i]
+#                 lookformax = True
+
+#     return array(maxtab), array(mintab)
+
+def add_margin(array, margin):
+    if array[0] - margin > 0:
+        array[0] = array[0] - margin
+    else:
+        array[0] = 0
+    if array[1] + margin < 540: # image width
+        array[1] = array[1] + margin
+    else:
+        array[1] = 540
+    return array
+
+def split_equal(matrix):
+    # Cleanup Manual
+    matrix = matrix[:, 50:-50] # cut sides
+
+    # Cleanup Vertical (bottom)
+    non_zero_bottom_index = np.nonzero(np.count_nonzero(matrix, axis=1))[0][-1]
+    matrix = matrix[:non_zero_bottom_index, :]
+
+
+    # Cleanup Horizontal
+    non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
+    # maxtab, mintab = peakdet(non_zero_column, 0.5)
+
+    # plt.plot(non_zero_column)
+    # plt.scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
+    # plt.scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
+    
+    # plt.show()
+
+    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8)
+
+    left_ips = left_ips.astype(int)
+    right_ips = right_ips.astype(int)
+
+    margin_horizontal = 20
+
+    left_valley = add_margin([left_ips[0], right_ips[0]], margin_horizontal)
+    right_valley = add_margin([left_ips[1], right_ips[1]], margin_horizontal)
+
+    # display plot
+    # plt.plot(non_zero_column)
+    # plt.scatter(peaks, non_zero_column[peaks], color="yellow")
+    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    # plt.scatter(right_valley, non_zero_column[right_valley], color="blue")
+    # plt.show()
+
+    # Remove vertical (top)
+    margin_vertical = 150
+    top_index = 0 if matrix.shape[0] - margin_vertical < 0 else matrix.shape[0] - margin_vertical
+    matrix = matrix[top_index:, :]
+
+    # Remove horizontal by value & split
+    left_matrix = matrix[:, left_valley[0]:left_valley[1]]
+    right_matrix = matrix[:, right_valley[0]:right_valley[1]]
+
+    left_peak_matrix = matrix[:, peaks[0]]
+    right_peak_matrix = matrix[:, peaks[1]]
+
+    return left_matrix, right_matrix, non_zero_column[peaks], left_peak_matrix, right_peak_matrix
+
+# Streaming loop
+def main():
+    # cpu_count = mp.cpu_count()
+    # print(f"cpu count is: {cpu_count}")
+    
+    # Create object for parsing command-line options
+    parser = argparse.ArgumentParser(description="Read recorded bag file and display depth stream in jet colormap.\
+                                    Remember to change the stream fps and format to match the recorded.")
+    # Add argument which takes path to a bag file as an input
+    parser.add_argument("-i", "--input", type=str, help="Path to the bag file")
+    # Parse the command line arguments to an object
+    args = parser.parse_args()
+    # Safety if no parameter have been given
+    if not args.input:
+        print("No input paramater have been given.")
+        print("For help type --help")
+        exit()
+    # Check if the given file have bag extension
+    if os.path.splitext(args.input)[1] != ".bag":
+        print("The given file is not of correct file format.")
+        print("Only .bag files are accepted")
+        exit()
+
+    try:
+        # Create pipeline
+        pipeline = rs.pipeline()
+
+        # Create a config object
+        config = rs.config()
+
+        # Tell config that we will use a recorded device from file to be used by the pipeline through playback.
+        rs.config.enable_device_from_file(config, args.input)
+
+        # Configure the pipeline to stream the depth stream
+        # Change this parameters according to the recorded bag file resolution
+        config.enable_stream(rs.stream.depth, rs.format.z16, 30)
+
+        # Start streaming from file
+        profile = pipeline.start(config)
+        
+        # set playback realtime to false -> otherwise it will drop frames to keep it at the same speed as 30fps
+        playback = profile.get_device().as_playback()
+        playback.set_real_time(False)
+
+        cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
+
+        max_right = []
+        max_left = []
+        min_right = []
+        min_left = []
+        avg_right = []
+        avg_left = []
+        peak_right = []
+        peak_left = []
+
+        i = 0
+        print(f"Skipping to frame 20")
+        while True:
+            while i % 367 < 80:
+                # Get frameset of color and depth
+                frames = pipeline.wait_for_frames()
+                i += 1
+            print(f"frame: {i}")
+            # Get frameset of color and depth
+            frames = pipeline.wait_for_frames()
+
+            # Get depth frame
+            depth_frame = frames.get_depth_frame()
+
+            depth_image = np.asanyarray(depth_frame.get_data())
+
+            # Split array
+            # split_array = np.split(depth_image, cpu_count)
+            
+            # pool = mp.Pool(cpu_count)
+            # results = pool.map(remove_ground, split_array)
+            # pool.close()
+
+            # depth_image = np.vstack(results)
+
+
+            ################
+            # Remove Noise #
+            ################
+            # Add Missing Values
+            # depth_image = remove_sound(depth_image)
+
+            # Real Distance
+            # depth_image = real_distance(depth_image)
+
+            # Remove Ground
+            depth_image_rg = remove_ground(depth_image)
+            # depth_image_bg = remove_background(depth_image, depth_image)
+
+            # Remove background
+            depth_image_bg = remove_background(depth_image_rg, depth_image_rg)
+            # depth_image_rg = remove_ground(depth_image_bg)
+
+            ##############
+            # Split View #
+            ##############
+            # depth_image_left, depth_image_right = split_equal(depth_image_bg)
+            depth_image_left, depth_image_right, peak_values, left_peak_matrix, right_peak_matrix  = split_equal(depth_image_bg)
+
+            ############
+            # Analysis #
+            ############
+            # Staptijd ()
+            avg_right.append(np.average(depth_image_left[depth_image_left!=0]))
+            avg_left.append(np.average(depth_image_right[depth_image_right!=0]))
+
+            # Staplengte (afstand tussen afstand van de linker en rechter voet bij initial contact)
+            max_right.append(np.max(left_peak_matrix[left_peak_matrix!=0]))
+            max_left.append(np.max(right_peak_matrix[right_peak_matrix!=0]))
+            
+            min_right.append(np.min(depth_image_left[depth_image_left!=0]))
+            min_left.append(np.min(depth_image_right[depth_image_right!=0]))
+
+            # Stapbreedte (moment dat voeten naast elkaar staan -> hoe breed uit elkaar?)
+            peak_right.append(peak_values[0])
+            peak_left.append(peak_values[1])
+            if peak_values[0] in range(peak_values[1] - 5, peak_values[1] + 5):
+                print(True)
+
+
+            #################
+            # Render images #
+            #################
+            #   depth align to color on left
+            #   depth on right
+            depth_colormap_left = colorize_depth(depth_image_left)
+            depth_colormap_right = colorize_depth(depth_image_right)
+            original = colorize_depth(depth_image_bg)
+            # depth_colormap = colorize_depth(np.vstack(depth_image_rg))
+
+            # note that left leg = right image and vise versa
+            # reshape needs to be bigger
+            # cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[::-1])
+            # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[::-1])
+            cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[1] * 3, depth_image_right.shape[0] * 3)
+            cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[1] * 3, depth_image_left.shape[0] * 3)
+            # cv2.resizeWindow('Original', 1920, 1440)
+            cv2.imshow('Image Feed Left leg', depth_colormap_right)
+            cv2.imshow('Image Feed Right leg', depth_colormap_left)
+            # cv2.imshow('Original', original)
+
+            i += 1
+            if i == 367:
+                figure, axis = plt.subplots(2, 2)
+
+                # Average
+                matrix_to_csv(np.vstack([avg_right, avg_left]), "avg.csv")
+                axis[0, 0].plot(avg_right, color="red")
+                axis[0, 0].plot(avg_left, color="blue")
+                axis[0, 0].set_title("Average")
+
+                # Peaks
+                matrix_to_csv(np.vstack([peak_right, peak_left]), "peak.csv")
+                axis[0, 1].plot(peak_right, color="red")
+                axis[0, 1].plot(peak_left, color="blue")
+                axis[0, 1].set_title("Peaks")
+
+                # Maximum
+                matrix_to_csv(np.vstack([max_right, max_left]), "max.csv")
+                axis[1, 0].plot(max_right, color="red")
+                axis[1, 0].plot(max_left, color="blue")
+                axis[1, 0].set_title("Maximum")
+
+                # Minimum
+                matrix_to_csv(np.vstack([min_right, min_left]), "min.csv")
+                axis[1, 1].plot(min_right, color="red")
+                axis[1, 1].plot(min_left, color="blue")
+                axis[1, 1].set_title("Minimum")
+
+                # Combine all the operations and display
+                plt.show()
+                break
+
+            #######################
+            # Wait for keypresses #
+            #######################
+            key = cv2.waitKey(1)
+            # Press esc or 'q' to close the image window
+            if key & 0xFF == ord('q') or key == 27:
+                cv2.destroyAllWindows()
+                break
+
+            # Print depth_image matrix to csv
+            if key & 0xFF == ord('a'):
+                matrix_to_csv(depth_image_right, "matrix.csv")
+
+            # Print depth_image matrix no background 
+            if key & 0xFF == ord('b'):
+                depth_bg_removed = remove_background(depth_image, depth_image)
+
+                depth_colormap_bg_removed = colorize_depth(depth_bg_removed, 0.1)
+                cv2.namedWindow('Background_Removed', cv2.WINDOW_NORMAL)
+                cv2.imshow('Background_Removed', depth_colormap_bg_removed)
+            
+            # Print depth_image matrix no background and coordinate correction
+            if key & 0xFF == ord('c'):
+                real_coords = real_distance(depth_image)
+                depth_colormap_coords = colorize_depth(real_coords)
+                cv2.namedWindow('Real_Coords', cv2.WINDOW_NORMAL)
+                cv2.imshow('Real_Coords', depth_colormap_coords)
+            
+            # Print depth_image matrix no background and floor detection (on mean)
+            if key & 0xFF == ord('d'):
+                # depth_bgr_sr = depth_image[:, 100:-100] # remove sides of the matrix to avoid extra unnecesary details
+                ground_det_mean = remove_ground(depth_image, "mean")
+                ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
+
+                depth_colormap_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
+                cv2.namedWindow('Ground_removed_mean', cv2.WINDOW_NORMAL)
+                cv2.imshow('Ground_removed_mean', depth_colormap_mean_bg)
+            
+            # Print depth_image matrix no background and floor detection (on average)
+            if key & 0xFF == ord('e'):
+                ground_det_average = remove_ground(depth_image, "average")
+                ground_det_average_bg = remove_background(ground_det_average, ground_det_average)
+
+                depth_colormap_average_bg = colorize_depth(ground_det_average_bg, 0.1)
+                cv2.namedWindow('Ground_removed_average', cv2.WINDOW_NORMAL)
+                cv2.imshow('Ground_removed_average', depth_colormap_average_bg)
+            
+            # Print depth_image matrix no background and floor detection with coord_correction (on mean)
+            if key & 0xFF == ord('f'):
+                real_coords = real_distance(depth_image)
+                ground_det_mean = remove_ground(real_coords, "mean")
+                ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
+
+                depth_colormap_cc_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
+                cv2.namedWindow('Ground_removed_cc_mean', cv2.WINDOW_NORMAL)
+                cv2.imshow('Ground_removed_cc_mean', depth_colormap_cc_mean_bg)
+            
+            
+            # Print depth_image matrix no background and floor detection with coord_correction (on average)
+            if key & 0xFF == ord('g'):
+                real_coords = real_distance(depth_image)
+                ground_det_average = remove_ground(real_coords, "average")
+                ground_det_average_bg = remove_background(ground_det_average, ground_det_average)
+
+                depth_colormap_cc_average_bg = colorize_depth(ground_det_average_bg, 0.1)
+                cv2.namedWindow('Ground_removed_cc_average', cv2.WINDOW_NORMAL)
+                cv2.imshow('Ground_removed_cc_average', depth_colormap_cc_average_bg)
+            
+            # Display Average
+            if key & 0xFF == ord('h'):
+                plt.plot(avg_right, color="red")
+                plt.plot(avg_left, color="blue")
+                plt.show()
+
+            # Display Maximum
+            if key & 0xFF == ord('i'):
+                plt.plot(max_right, color="red")
+                plt.plot(max_left, color="blue")
+                plt.show()
+
+            # Display Minimum (of most values)
+            if key & 0xFF == ord('j'):
+                plt.plot(min_right, color="red")
+                plt.plot(min_left, color="blue")
+                plt.show()
+
+
+
+
+
+    finally:
+        pipeline.stop()
+
+if __name__ == "__main__":
+    main()
