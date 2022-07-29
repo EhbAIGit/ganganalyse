@@ -115,40 +115,33 @@ def real_distance(matrix):
             return np.sqrt(b_exp)
     return np.vectorize(pythagoras)(matrix)
 
-def remove_ground(matrix, mean_avg):
-    def compare(x, est):
-        if np.absolute(x - est) < 150: return 0 # if difference bigger than 15cm, replace with 0
+def remove_ground(matrix, median_avg):
+    def compare(x, median):
+        if np.absolute(x - median) <= 150: return 0 # if difference bigger than 15cm, replace with 0
         else: return x
     vcompare = np.vectorize(compare)
+    new_matrix = []
 
-
-    if mean_avg == "mean":
-        ground_det_mean = []
-        for row in matrix:
-            row_mean = np.mean(row[row != 0])
-            if not np.isnan(row_mean):
-                new_row = vcompare(row, row_mean)
-                ground_det_mean.append(new_row)
-            else:
-                ground_det_mean.append(row)
-        
-        ground_det_mean = np.array(ground_det_mean)
-        # remove the backgroudn > 1.5m from image
-        return ground_det_mean
+    if median_avg == "average":
+        for i in range(len(matrix)):
+        # for i in range(len(matrix)):
+            row = matrix[i]
+            row_median = np.average(row[row != 0])
+            # row_median = np.median(row)
+            if not np.isnan(row_median):
+                new_matrix.append(vcompare(row, row_median))
+                # matrix[i:i+median_of_i_rows] = vcompare(row, row_median)
+    else:
+        for i in range(len(matrix)):
+        # for i in range(len(matrix)):
+            row = matrix[i]
+            row_median = np.median(row[row != 0])
+            # row_median = np.median(row)
+            if not np.isnan(row_median):
+                new_matrix.append(vcompare(row, row_median))
+                # matrix[i:i+median_of_i_rows] = vcompare(row, row_median)
     
-    if mean_avg == "average":
-        ground_det_average = []
-        for row in matrix:
-            row_average = np.average(row[row != 0])
-            if not np.isnan(row_average):
-                new_row = vcompare(row, row_average)
-                ground_det_average.append(new_row)
-            else:
-                ground_det_average.append(row)
-
-        ground_det_average = np.array(ground_det_average)
-        # remove the backgroudn > 1.5m from image
-        return ground_det_average
+    return np.array(new_matrix)
 
 def remove_background(depth_matrix, matrix_remove_background):
     grey_color = 0
@@ -179,7 +172,7 @@ try:
         depth_image = np.asanyarray(aligned_depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
 
-        # depth_image = remove_ground(depth_image, "mean")
+        # depth_image = remove_ground(depth_image, "median")
 
         # Remove background - Set pixels further than clipping_distance to grey
         depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
@@ -240,15 +233,15 @@ try:
             cv2.namedWindow('Real_Coords', cv2.WINDOW_NORMAL)
             cv2.imshow('Real_Coords', depth_colormap_coords)
         
-        # Print depth_image matrix no background and floor detection (on mean)
+        # Print depth_image matrix no background and floor detection (on median)
         if key & 0xFF == ord('d'):
             # depth_bgr_sr = depth_image[:, 100:-100] # remove sides of the matrix to avoid extra unnecesary details
-            ground_det_mean = remove_ground(depth_image, "mean")
-            ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
+            ground_det_median = remove_ground(depth_image, "median")
+            ground_det_median_bg = remove_background(ground_det_median, ground_det_median)
 
-            depth_colormap_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
-            cv2.namedWindow('Ground_removed_mean', cv2.WINDOW_NORMAL)
-            cv2.imshow('Ground_removed_mean', depth_colormap_mean_bg)
+            depth_colormap_median_bg = colorize_depth(ground_det_median_bg, 0.1)
+            cv2.namedWindow('Ground_removed_median', cv2.WINDOW_NORMAL)
+            cv2.imshow('Ground_removed_median', depth_colormap_median_bg)
         
         # Print depth_image matrix no background and floor detection (on average)
         if key & 0xFF == ord('e'):
@@ -259,15 +252,15 @@ try:
             cv2.namedWindow('Ground_removed_average', cv2.WINDOW_NORMAL)
             cv2.imshow('Ground_removed_average', depth_colormap_average_bg)
         
-        # Print depth_image matrix no background and floor detection with coord_correction (on mean)
+        # Print depth_image matrix no background and floor detection with coord_correction (on median)
         if key & 0xFF == ord('f'):
             real_coords = real_distance(depth_image)
-            ground_det_mean = remove_ground(real_coords, "mean")
-            ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
+            ground_det_median = remove_ground(real_coords, "median")
+            ground_det_median_bg = remove_background(ground_det_median, ground_det_median)
 
-            depth_colormap_cc_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
-            cv2.namedWindow('Ground_removed_cc_mean', cv2.WINDOW_NORMAL)
-            cv2.imshow('Ground_removed_cc_mean', depth_colormap_cc_mean_bg)
+            depth_colormap_cc_median_bg = colorize_depth(ground_det_median_bg, 0.1)
+            cv2.namedWindow('Ground_removed_cc_median', cv2.WINDOW_NORMAL)
+            cv2.imshow('Ground_removed_cc_median', depth_colormap_cc_median_bg)
         
         
         # Print depth_image matrix no background and floor detection with coord_correction (on average)
@@ -282,18 +275,18 @@ try:
         
         # Print d -> g
         if key & 0xFF == ord('h'):
-            ground_det_mean = remove_ground(depth_image, "mean")
-            ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
+            ground_det_median = remove_ground(depth_image, "median")
+            ground_det_median_bg = remove_background(ground_det_median, ground_det_median)
 
-            depth_image_3d_mean_bg = np.dstack((ground_det_mean_bg,ground_det_mean_bg,ground_det_mean_bg))
-            bg_removed_mean_bg = remove_background(depth_image_3d_mean_bg, color_image)
+            depth_image_3d_median_bg = np.dstack((ground_det_median_bg,ground_det_median_bg,ground_det_median_bg))
+            bg_removed_median_bg = remove_background(depth_image_3d_median_bg, color_image)
 
-            depth_colormap_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
+            depth_colormap_median_bg = colorize_depth(ground_det_median_bg, 0.1)
 
-            images_mean = np.hstack((bg_removed_mean_bg, depth_colormap_mean_bg))
-            cv2.namedWindow('Ground_removed_mean', cv2.WINDOW_NORMAL)
-            cv2.imshow('Ground_removed_mean', images_mean)
-            matrix_to_csv(ground_det_mean_bg, "Ground_removed_mean.csv")
+            images_median = np.hstack((bg_removed_median_bg, depth_colormap_median_bg))
+            cv2.namedWindow('Ground_removed_median', cv2.WINDOW_NORMAL)
+            cv2.imshow('Ground_removed_median', images_median)
+            matrix_to_csv(ground_det_median_bg, "Ground_removed_median.csv")
 
 
             ground_det_average = remove_ground(depth_image, "average")
@@ -311,18 +304,18 @@ try:
             
 
             real_coords = real_distance(depth_image)
-            ground_det_cc_mean = remove_ground(real_coords, "mean")
-            ground_det_cc_mean_bg = remove_background(ground_det_cc_mean, ground_det_cc_mean)
+            ground_det_cc_median = remove_ground(real_coords, "median")
+            ground_det_cc_median_bg = remove_background(ground_det_cc_median, ground_det_cc_median)
 
-            depth_image_3d_cc_mean_bg = np.dstack((ground_det_cc_mean_bg,ground_det_cc_mean_bg,ground_det_cc_mean_bg))
-            bg_removed_cc_mean_bg = remove_background(depth_image_3d_cc_mean_bg, color_image)
+            depth_image_3d_cc_median_bg = np.dstack((ground_det_cc_median_bg,ground_det_cc_median_bg,ground_det_cc_median_bg))
+            bg_removed_cc_median_bg = remove_background(depth_image_3d_cc_median_bg, color_image)
 
-            depth_colormap_cc_mean_bg = colorize_depth(ground_det_cc_mean_bg, 0.1)
+            depth_colormap_cc_median_bg = colorize_depth(ground_det_cc_median_bg, 0.1)
 
-            images_cc_mean = np.hstack((bg_removed_cc_mean_bg, depth_colormap_cc_mean_bg))
-            cv2.namedWindow('Ground_removed_cc_mean', cv2.WINDOW_NORMAL)
-            cv2.imshow('Ground_removed_cc_mean', images_cc_mean)
-            matrix_to_csv(ground_det_cc_mean_bg, "Ground_removed_cc_mean.csv")
+            images_cc_median = np.hstack((bg_removed_cc_median_bg, depth_colormap_cc_median_bg))
+            cv2.namedWindow('Ground_removed_cc_median', cv2.WINDOW_NORMAL)
+            cv2.imshow('Ground_removed_cc_median', images_cc_median)
+            matrix_to_csv(ground_det_cc_median_bg, "Ground_removed_cc_median.csv")
             
 
             real_coords = real_distance(depth_image)
