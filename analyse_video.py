@@ -204,11 +204,12 @@ def split_equal(matrix):
     # Cleanup Manual
     matrix = matrix[:, 50:-50] # cut sides
 
-    # Cleanup bottom
+    # Cleanup Vertical (bottom)
     non_zero_bottom_index = np.nonzero(np.count_nonzero(matrix, axis=1))[0][-1]
     matrix = matrix[:non_zero_bottom_index, :]
 
-    # Cleanup Auto
+
+    # Cleanup Horizontal
     non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
     # maxtab, mintab = peakdet(non_zero_column, 0.5)
 
@@ -218,24 +219,30 @@ def split_equal(matrix):
     
     # plt.show()
 
-    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10) # Explain these numbers with examples
-    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8) # Explain these numbers with examples
+    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8)
 
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
 
-    margin = 20
+    margin_horizontal = 20
 
-    left_valley = add_margin([left_ips[0], right_ips[0]], margin)
-    right_valley = add_margin([left_ips[1], right_ips[1]], margin)
+    left_valley = add_margin([left_ips[0], right_ips[0]], margin_horizontal)
+    right_valley = add_margin([left_ips[1], right_ips[1]], margin_horizontal)
 
     # display plot
-    # plt.plot(non_zero_column)
-    # plt.scatter(peaks, non_zero_column[peaks], color="blue")
-    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
-    # plt.scatter(right_valley, non_zero_column[right_valley], color="yellow")
-    # plt.show()
+    plt.plot(non_zero_column)
+    plt.scatter(peaks, non_zero_column[peaks], color="yellow")
+    plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    plt.scatter(right_valley, non_zero_column[right_valley], color="blue")
+    plt.show()
 
+    # Remove vertical (top)
+    margin_vertical = 150
+    top_index = 0 if matrix.shape[0] - margin_vertical < 0 else matrix.shape[0] - margin_vertical
+    matrix = matrix[top_index:, :]
+
+    # Remove horizontal by value & split
     left_matrix = matrix[:, left_valley[0]:left_valley[1]]
     right_matrix = matrix[:, right_valley[0]:right_valley[1]]
 
@@ -288,17 +295,9 @@ def main():
         playback = profile.get_device().as_playback()
         playback.set_real_time(False)
 
-        i = 0
-        print(f"Skipping to frame 70")
-        while i < 70:
-            i += 1
-            # Get frameset of color and depth
-            frames = pipeline.wait_for_frames()
-            # frames.get_depth_frame() is a 640x480 depth image
-
-
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
 
         max_right = []
         max_left = []
@@ -306,9 +305,46 @@ def main():
         min_left = []
         avg_right = []
         avg_left = []
+        peak_right = []
+        peak_left = []
 
+        i = 0
+        print(f"Skipping to frame 20")
         while True:
-            i += 1
+            if i == 367:
+                figure, axis = plt.subplots(2, 2)
+
+                # Average
+                matrix_to_csv(np.vstack(avg_right, avg_left), "avg.csv")
+                axis[0, 0].plot(avg_right, color="red")
+                axis[0, 0].plot(avg_left, color="blue")
+                axis[0, 0].set_title("Average")
+
+                # Peaks
+                matrix_to_csv(np.vstack(peak_right, peak_left), "peak.csv")
+                axis[0, 1].plot(peak_right, color="red")
+                axis[0, 1].plot(peak_left, color="blue")
+                axis[0, 1].set_title("Peaks")
+
+                # Maximum
+                matrix_to_csv(np.vstack(max_right, max_left), "max.csv")
+                axis[1, 0].plot(max_right, color="red")
+                axis[1, 0].plot(max_left, color="blue")
+                axis[1, 0].set_title("Maximum")
+
+                # Minimum
+                matrix_to_csv(np.vstack(min_right, min_left), "min.csv")
+                axis[1, 1].plot(min_right, color="red")
+                axis[1, 1].plot(min_left, color="blue")
+                axis[1, 1].set_title("Minimum")
+
+                # Combine all the operations and display
+                plt.show()
+                break
+            while i % 367 < 80:
+                # Get frameset of color and depth
+                frames = pipeline.wait_for_frames()
+                i += 1
             print(f"frame: {i}")
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
@@ -366,6 +402,8 @@ def main():
             min_left.append(np.min(depth_image_right[depth_image_right!=0]))
 
             # Stapbreedte (moment dat voeten naast elkaar staan -> hoe breed uit elkaar?)
+            peak_right.append(peak_values[0])
+            peak_left.append(peak_values[1])
             if peak_values[0] in range(peak_values[1] - 5, peak_values[1] + 5):
                 print(True)
 
@@ -375,8 +413,9 @@ def main():
             #################
             #   depth align to color on left
             #   depth on right
-            depth_colormap_left = colorize_depth(np.vstack(depth_image_left))
-            depth_colormap_right = colorize_depth(np.vstack(depth_image_right))
+            depth_colormap_left = colorize_depth(depth_image_left)
+            depth_colormap_right = colorize_depth(depth_image_right)
+            original = colorize_depth(depth_image_bg)
             # depth_colormap = colorize_depth(np.vstack(depth_image_rg))
 
             # note that left leg = right image and vise versa
@@ -385,9 +424,12 @@ def main():
             # cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[::-1])
             cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[1] * 3, depth_image_right.shape[0] * 3)
             cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[1] * 3, depth_image_left.shape[0] * 3)
+            # cv2.resizeWindow('Original', 1920, 1440)
             cv2.imshow('Image Feed Left leg', depth_colormap_right)
             cv2.imshow('Image Feed Right leg', depth_colormap_left)
+            # cv2.imshow('Original', original)
 
+            i += 1
             #######################
             # Wait for keypresses #
             #######################
