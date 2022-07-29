@@ -73,21 +73,21 @@ def remove_ground(matrix):
     # for i in range(len(matrix)):
     # # for i in range(len(matrix)):
     #     row = matrix[i]
-    #     row_mean = np.average(row[row != 0])
-    #     # row_mean = np.mean(row)
-    #     if not np.isnan(row_mean):
-    #         matrix[i] = vcompare(row, row_mean)
-    #         # matrix[i:i+mean_of_i_rows] = vcompare(row, row_mean)
+    #     row_median = np.average(row[row != 0])
+    #     # row_median = np.median(row)
+    #     if not np.isnan(row_median):
+    #         matrix[i] = vcompare(row, row_median)
+    #         # matrix[i:i+median_of_i_rows] = vcompare(row, row_median)
 
     new_matrix = []
     for i in range(len(matrix)):
     # for i in range(len(matrix)):
         row = matrix[i]
         row_median = np.median(row[row != 0])
-        # row_mean = np.mean(row)
+        # row_median = np.median(row)
         if not np.isnan(row_median):
             new_matrix.append(vcompare(row, row_median))
-            # matrix[i:i+mean_of_i_rows] = vcompare(row, row_mean)
+            # matrix[i:i+median_of_i_rows] = vcompare(row, row_median)
     
     return np.array(new_matrix)
 
@@ -137,12 +137,12 @@ def split_equal(matrix):
     non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
 
     peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
-    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.8)
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.90)
 
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
 
-    margin_horizontal = 20
+    margin_horizontal = 10
 
     left_valley = add_margin([left_ips[0], right_ips[0]], margin_horizontal)
     right_valley = add_margin([left_ips[1], right_ips[1]], margin_horizontal)
@@ -215,6 +215,9 @@ def main():
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
+        
+        fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+        out = cv2.VideoWriter('output_150.avi', fourcc, 30, (640, 480))
 
         min_right = []
         min_left = []
@@ -263,6 +266,8 @@ def main():
             ##############
             # depth_image_left, depth_image_right = split_equal(depth_image_bg)
             depth_image_left, depth_image_right, peak_values, left_peak_matrix, right_peak_matrix  = split_equal(depth_image_bg)
+            if i == 97 or i == 171 or i == 244 or i == 307:
+                print("---------------")
 
             ############
             # Analysis #
@@ -303,6 +308,8 @@ def main():
             cv2.imshow('Image Feed Right leg', depth_colormap_left)
             cv2.imshow('Original', original)
 
+            out.write(original)
+
             i += 1
             if i == 367:
                 figure, axis = plt.subplots(2, 2)
@@ -340,67 +347,11 @@ def main():
             key = cv2.waitKey(1)
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
-                cv2.destroyAllWindows()
                 break
+        out.release()
+        cv2.destroyAllWindows()
 
-            # Print depth_image matrix to csv
-            if key & 0xFF == ord('a'):
-                matrix_to_csv(depth_image, "matrix.csv")
 
-            # Print depth_image matrix no background 
-            if key & 0xFF == ord('b'):
-                depth_bg_removed = remove_background(depth_image, depth_image)
-
-                depth_colormap_bg_removed = colorize_depth(depth_bg_removed, 0.1)
-                cv2.namedWindow('Background_Removed', cv2.WINDOW_NORMAL)
-                cv2.imshow('Background_Removed', depth_colormap_bg_removed)
-            
-            # Print depth_image matrix no background and coordinate correction
-            if key & 0xFF == ord('c'):
-                real_coords = real_distance(depth_image)
-                depth_colormap_coords = colorize_depth(real_coords)
-                cv2.namedWindow('Real_Coords', cv2.WINDOW_NORMAL)
-                cv2.imshow('Real_Coords', depth_colormap_coords)
-            
-            # Print depth_image matrix no background and floor detection (on mean)
-            if key & 0xFF == ord('d'):
-                # depth_bgr_sr = depth_image[:, 100:-100] # remove sides of the matrix to avoid extra unnecesary details
-                ground_det_mean = remove_ground(depth_image, "mean")
-                ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
-
-                depth_colormap_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
-                cv2.namedWindow('Ground_removed_mean', cv2.WINDOW_NORMAL)
-                cv2.imshow('Ground_removed_mean', depth_colormap_mean_bg)
-            
-            # Print depth_image matrix no background and floor detection (on average)
-            if key & 0xFF == ord('e'):
-                ground_det_average = remove_ground(depth_image, "average")
-                ground_det_average_bg = remove_background(ground_det_average, ground_det_average)
-
-                depth_colormap_average_bg = colorize_depth(ground_det_average_bg, 0.1)
-                cv2.namedWindow('Ground_removed_average', cv2.WINDOW_NORMAL)
-                cv2.imshow('Ground_removed_average', depth_colormap_average_bg)
-            
-            # Print depth_image matrix no background and floor detection with coord_correction (on mean)
-            if key & 0xFF == ord('f'):
-                real_coords = real_distance(depth_image)
-                ground_det_mean = remove_ground(real_coords, "mean")
-                ground_det_mean_bg = remove_background(ground_det_mean, ground_det_mean)
-
-                depth_colormap_cc_mean_bg = colorize_depth(ground_det_mean_bg, 0.1)
-                cv2.namedWindow('Ground_removed_cc_mean', cv2.WINDOW_NORMAL)
-                cv2.imshow('Ground_removed_cc_mean', depth_colormap_cc_mean_bg)
-            
-            
-            # Print depth_image matrix no background and floor detection with coord_correction (on average)
-            if key & 0xFF == ord('g'):
-                real_coords = real_distance(depth_image)
-                ground_det_average = remove_ground(real_coords, "average")
-                ground_det_average_bg = remove_background(ground_det_average, ground_det_average)
-
-                depth_colormap_cc_average_bg = colorize_depth(ground_det_average_bg, 0.1)
-                cv2.namedWindow('Ground_removed_cc_average', cv2.WINDOW_NORMAL)
-                cv2.imshow('Ground_removed_cc_average', depth_colormap_cc_average_bg)
 
 
 
