@@ -26,8 +26,10 @@ import argparse
 # Import os.path for file path manipulation
 import os.path
 
+ground_margin = 150
+
 def matrix_to_csv(matrix, filename):
-    np.savetxt(f"csv/{filename}", matrix, delimiter=';', fmt='%i')
+    np.savetxt(f"csv/{filename}.csv", matrix, delimiter=';', fmt='%i')
 
 def remove_sound(matrix):
     y_min = 289 ## Dont do correction above certain pixel in image 
@@ -66,7 +68,7 @@ def real_distance(matrix):
 
 def remove_ground(matrix):
     def compare(x, median):
-        if np.absolute(x - median) <= 50: return 0 # if difference bigger than 15cm, replace with 0
+        if np.absolute(x - median) <= ground_margin: return 0 # if difference bigger than 15cm, replace with 0
         else: return x
     vcompare = np.vectorize(compare)
 
@@ -214,10 +216,10 @@ def main():
 
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
         
-        fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-        out = cv2.VideoWriter('videos/output_50.avi', fourcc, 30, (640, 480))
+        # fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+        # out = cv2.VideoWriter(f"videos/output_{ground_margin}.avi", fourcc, 30, (640, 480))
 
         min_right = []
         min_left = []
@@ -297,42 +299,42 @@ def main():
             #   depth on right
             depth_colormap_left = colorize_depth(depth_image_left)
             depth_colormap_right = colorize_depth(depth_image_right)
-            original = colorize_depth(depth_image_bg)
+            # original = colorize_depth(depth_image_bg)
 
             # note that left leg = right image and vise versa
             # reshape needs to be bigger
             cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[1] * 3, depth_image_right.shape[0] * 3)
             cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[1] * 3, depth_image_left.shape[0] * 3)
-            cv2.resizeWindow('Original', 1920, 1440)
+            # cv2.resizeWindow('Original', 1920, 1440)
             cv2.imshow('Image Feed Left leg', depth_colormap_right)
             cv2.imshow('Image Feed Right leg', depth_colormap_left)
-            cv2.imshow('Original', original)
+            # cv2.imshow('Original', original)
 
-            out.write(original)
+            # out.write(original)
 
             i += 1
             if i == 367:
                 figure, axis = plt.subplots(2, 2)
 
                 # Minimum
-                matrix_to_csv(np.vstack([min_right, min_left]), "min.csv")
+                matrix_to_csv(np.vstack([min_right, min_left]), f"min_{ground_margin}")
                 axis[0, 0].plot(min_right, color="red")
                 axis[0, 0].plot(min_left, color="blue")
                 axis[0, 0].set_title("Minimum")
 
                 # Maximum
-                matrix_to_csv(np.vstack([max_peak_right, max_peak_left]), "max_peak.csv")
+                matrix_to_csv(np.vstack([max_peak_right, max_peak_left]), f"max_peak_{ground_margin}")
                 axis[0, 1].plot(max_peak_right, color="red")
                 axis[0, 1].plot(max_peak_left, color="blue")
                 axis[0, 1].set_title("Maximum on peak matrix")
 
-                matrix_to_csv(np.vstack([min_peak_right, min_peak_left]), "min_peak.csv")
+                matrix_to_csv(np.vstack([min_peak_right, min_peak_left]), f"min_peak_{ground_margin}")
                 axis[1, 0].plot(min_peak_right, color="red")
                 axis[1, 0].plot(min_peak_left, color="blue")
                 axis[1, 0].set_title("Minimum on peak matrix")
 
                 # Peaks
-                matrix_to_csv(np.vstack([peak_right, peak_left]), "peak.csv")
+                matrix_to_csv(np.vstack([peak_right, peak_left]), f"peak_{ground_margin}")
                 axis[1, 1].plot(peak_right, color="red")
                 axis[1, 1].plot(peak_left, color="blue")
                 axis[1, 1].set_title("Peaks")
@@ -348,7 +350,7 @@ def main():
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
                 break
-        out.release()
+        # out.release()
         cv2.destroyAllWindows()
 
 

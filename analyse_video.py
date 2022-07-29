@@ -6,26 +6,28 @@ import os.path
 
 import csv
 
+selected_margin = 50
+
 min = []
-with open("csv/min.csv") as csvfile:
+with open(f"csv/min_{selected_margin}.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         min.append(row)
 
 min_peak = []
-with open("csv/min_peak.csv") as csvfile:
+with open(f"csv/min_peak_{selected_margin}.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         min_peak.append(row)
 
 max_peak = []
-with open("csv/max_peak.csv") as csvfile:
+with open(f"csv/max_peak_{selected_margin}.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         max_peak.append(row)
 
 peak = []
-with open("csv/peak.csv") as csvfile:
+with open(f"csv/peak_{selected_margin}.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         peak.append(row)
@@ -44,6 +46,14 @@ def color_scatter(axis, x_l, y_l, x_r, y_r):
         c = next(color)
         axis.scatter(x_r[i], y_r[i], color=c)
 
+def draw_lines(axis, x_l, y_l, x_r, y_r, v_l, v_r):
+    color = iter(plt.cm.rainbow(np.linspace(0, 1, len(x_l) + len(x_r))))
+    for i in range(len(x_l)):
+        c = next(color)
+        axis.plot([x_l[i], x_l[i]], [y_l[i], v_l[i]], color=c, label=f"y value: {v_l[i]}, distance:{v_l[i] - y_l[i]}")
+    for i in range(len(x_r)):
+        c = next(color)
+        axis.plot([x_r[i], x_r[i]], [y_r[i], v_r[i]], color=c, label=f"y value: {v_r[i]}, distance:{v_r[i] - y_r[i]}")
 
 def get_margin_for_valley(peaks, min):
     # Will get x values of where the peaks are at the same hight
@@ -142,27 +152,45 @@ _, valley_left_min = peakdet(min[1], 1, margin)
 valley_right_x = np.array(valley_right_min[:, 0]).astype(int)
 valley_left_x = np.array(valley_left_min[:, 0]).astype(int)
 
-figure, axis = plt.subplots(1, 3)
+figure, axis = plt.subplots(2, 2)
 
 # Minimum
-axis[0].plot(min[0], color="red")
-axis[0].plot(min[1], color="blue")
-color_scatter(axis[0], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1])
+axis[0, 0].plot(min[0], color="red")
+axis[0, 0].plot(min[1], color="blue")
+color_scatter(axis[0, 0], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1])
 # axis[0].scatter(peaks_right, min_right[peaks_right], color="yellow")
 # axis[0].scatter(peaks_left, min_left[peaks_left], color="yellow")
-axis[0].set_title("Minimum")
+axis[0, 0].set_title("Minimum (Initial Contact)")
+axis[0, 0].legend()
+
+# Minimum
+axis[1, 0].plot(min[0], color="red")
+axis[1, 0].plot(min[1], color="blue")
+color_scatter(axis[1, 0], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1])
+color_scatter(axis[1, 0], valley_left_x, min[0][valley_left_x], valley_right_x, min[1][valley_right_x])
+draw_lines(axis[1, 0], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1], min[0][valley_left_x], min[1][valley_right_x])
+# axis[0].scatter(peaks_right, min_right[peaks_right], color="yellow")
+# axis[0].scatter(peaks_left, min_left[peaks_left], color="yellow")
+axis[1, 0].set_title("Minimum (Preswing)")
+axis[1, 0].legend()
 
 # Minimum Peak
-axis[1].plot(min_peak[0], color="red")
-axis[1].plot(min_peak[1], color="blue")
-color_scatter(axis[1], valley_left_x, min_peak[0][valley_left_x], valley_right_x, min_peak[1][valley_right_x])
-axis[1].set_title("Minimum Peak")
+axis[0, 1].plot(min_peak[0], color="red")
+axis[0, 1].plot(min_peak[1], color="blue")
+color_scatter(axis[0, 1], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1])
+color_scatter(axis[0, 1], valley_left_x, min_peak[0][valley_left_x], valley_right_x, min_peak[1][valley_right_x])
+draw_lines(axis[0, 1], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1], min_peak[0][valley_left_x], min_peak[1][valley_right_x])
+axis[0, 1].set_title("Minimum Peak (Preswing)")
+axis[0, 1].legend()
 
 # Maximum Peak
-axis[2].plot(max_peak[0], color="red")
-axis[2].plot(max_peak[1], color="blue")
-color_scatter(axis[2], valley_left_x, max_peak[0][valley_left_x], valley_right_x, max_peak[1][valley_right_x])
-axis[2].set_title("Maximum Peak")
+axis[1, 1].plot(max_peak[0], color="red")
+axis[1, 1].plot(max_peak[1], color="blue")
+color_scatter(axis[1, 1], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1])
+color_scatter(axis[1, 1], valley_left_x, max_peak[0][valley_left_x], valley_right_x, max_peak[1][valley_right_x])
+draw_lines(axis[1, 1], valley_left_x, valley_left_min[:,1], valley_right_x, valley_right_min[:,1], max_peak[0][valley_left_x], max_peak[1][valley_right_x])
+axis[1, 1].set_title("Maximum Peak (Preswing)")
+axis[1, 1].legend()
 
 # Peak Min Distance
 print("Staplengte")
