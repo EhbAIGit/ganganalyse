@@ -27,7 +27,7 @@ import argparse
 import os.path
 
 def matrix_to_csv(matrix, filename):
-    np.savetxt(filename, matrix, delimiter=';', fmt='%i')
+    np.savetxt(f"csv/{filename}", matrix, delimiter=';', fmt='%i')
 
 def remove_sound(matrix):
     y_min = 289 ## Dont do correction above certain pixel in image 
@@ -66,7 +66,7 @@ def real_distance(matrix):
 
 def remove_ground(matrix):
     def compare(x, median):
-        if np.absolute(x - median) <= 150: return 0 # if difference bigger than 15cm, replace with 0
+        if np.absolute(x - median) <= 50: return 0 # if difference bigger than 15cm, replace with 0
         else: return x
     vcompare = np.vectorize(compare)
 
@@ -217,7 +217,7 @@ def main():
         cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
         
         fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-        out = cv2.VideoWriter('output_150.avi', fourcc, 30, (640, 480))
+        out = cv2.VideoWriter('videos/output_50.avi', fourcc, 30, (640, 480))
 
         min_right = []
         min_left = []

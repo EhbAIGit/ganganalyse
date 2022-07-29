@@ -7,25 +7,25 @@ import os.path
 import csv
 
 min = []
-with open("min.csv") as csvfile:
+with open("csv/min.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         min.append(row)
 
 min_peak = []
-with open("min_peak.csv") as csvfile:
+with open("csv/min_peak.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         min_peak.append(row)
 
 max_peak = []
-with open("max_peak.csv") as csvfile:
+with open("csv/max_peak.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         max_peak.append(row)
 
 peak = []
-with open("peak.csv") as csvfile:
+with open("csv/peak.csv") as csvfile:
     reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
     for row in reader: # each row is a list
         peak.append(row)

@@ -61,7 +61,7 @@ try:
     colorizer = rs.colorizer()
 
     fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-    out = cv2.VideoWriter('original.avi', fourcc, 30, (640, 480))
+    out = cv2.VideoWriter('videos/original.avi', fourcc, 30, (640, 480))
 
     i = 0
     # Streaming loop
