@@ -72,12 +72,24 @@ def remove_ground(matrix):
         else: return x
     vcompare = np.vectorize(compare)
 
+    # for i in range(len(matrix)):
+    # # for i in range(len(matrix)):
+    #     row = matrix[i]
+    #     row_median = np.average(row[row != 0])
+    #     # row_median = np.median(row)
+    #     if not np.isnan(row_median):
+    #         matrix[i] = vcompare(row, row_median)
+    #         # matrix[i:i+median_of_i_rows] = vcompare(row, row_median)
+
     new_matrix = []
     for i in range(len(matrix)):
+    # for i in range(len(matrix)):
         row = matrix[i]
         row_median = np.median(row[row != 0])
+        # row_median = np.median(row)
         if not np.isnan(row_median):
             new_matrix.append(vcompare(row, row_median))
+            # matrix[i:i+median_of_i_rows] = vcompare(row, row_median)
     
     return np.array(new_matrix)
 
@@ -137,6 +149,13 @@ def split_equal(matrix):
     left_valley = add_margin([left_ips[0], right_ips[0]], margin_horizontal)
     right_valley = add_margin([left_ips[1], right_ips[1]], margin_horizontal)
 
+    # display plot
+    # plt.plot(non_zero_column)
+    # plt.scatter(peaks, non_zero_column[peaks], color="yellow")
+    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    # plt.scatter(right_valley, non_zero_column[right_valley], color="blue")
+    # plt.show()
+
     # Remove vertical (top)
     margin_vertical = 150
     top_index = 0 if matrix.shape[0] - margin_vertical < 0 else matrix.shape[0] - margin_vertical
@@ -153,6 +172,9 @@ def split_equal(matrix):
 
 # Streaming loop
 def main():
+    # cpu_count = mp.cpu_count()
+    # print(f"cpu count is: {cpu_count}")
+    
     # Create object for parsing command-line options
     parser = argparse.ArgumentParser(description="Read recorded bag file and display depth stream in jet colormap.\
                                     Remember to change the stream fps and format to match the recorded.")
@@ -194,6 +216,10 @@ def main():
 
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
+        
+        # fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+        # out = cv2.VideoWriter(f"videos/output_{ground_margin}.avi", fourcc, 30, (640, 480))
 
         min_right = []
         min_left = []
@@ -240,6 +266,7 @@ def main():
             ##############
             # Split View #
             ##############
+            # depth_image_left, depth_image_right = split_equal(depth_image_bg)
             depth_image_left, depth_image_right, peak_values, left_peak_matrix, right_peak_matrix  = split_equal(depth_image_bg)
             if i == 96 or i == 243 or i == 170 or i == 306:
                 print("---------------")
