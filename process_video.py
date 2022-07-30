@@ -28,27 +28,10 @@ import os.path
 from analyse_video import main as analyse
 from progress import Progress
 
-ground_margin = 50
+ground_margin = 60
 
 def matrix_to_csv(matrix, filename):
     np.savetxt(f"csv/{filename}.csv", matrix, delimiter=';', fmt='%i')
-
-def remove_sound(matrix):
-    y_min = 289 ## Dont do correction above certain pixel in image 
-    y_axis = range(len(matrix))[y_min:]
-    for i in y_axis:
-        x = matrix[i]
-        previous_j = x[0]
-        if previous_j == 0:
-            for k in range(1,len(x)):
-                if x[k] != 0:
-                    previous_j = x[k]
-                    break
-        for j in range(1,len(x)):
-            if x[j] == 0:
-                matrix[i][j] = previous_j
-            previous_j = matrix[i][j]
-    return matrix
 
 def real_distance(matrix):
     # Merk op, deze formule maakt gebruik van de hoogte van de camera. 
@@ -95,18 +78,21 @@ def remove_background(depth_matrix, matrix_remove_background):
     grey_color = 0
 
     # everything above row 150 smaller than 300 is not correct
-    min_distance = 350
     matrix_removed_background = np.where((depth_matrix > clipping_distance), grey_color, matrix_remove_background)
-    matrix_removed_noise = np.where((depth_matrix[:300, :] < min_distance), grey_color, matrix_removed_background[:300, :])
 
-    matrix = np.vstack([matrix_removed_noise, matrix_removed_background[300:, :]])
+    return matrix_removed_background
 
+def remove_noise(matrix, distance = 500):
+    grey_color = 0
+    height = matrix.shape[0]
+    height = int(height / 2)
+    matrix_rn = np.where((matrix[:height, :] < distance), grey_color, matrix[:height, :])
+    matrix = np.vstack([matrix_rn, matrix[height:, :]])
     return matrix
 
 def colorize_depth(matrix, alpha_value = 0.1):
     #tilde will reverse the grayscale (from 0- 255) as this is better for the colormap (red close, blue far)
     return cv2.applyColorMap(~cv2.convertScaleAbs(matrix, alpha=alpha_value), cv2.COLORMAP_TURBO)
-
 
 def add_margin(array, margin):
     if array[0] - margin > 0:
@@ -130,9 +116,14 @@ def split_equal(matrix):
 
     # Cleanup Horizontal
     non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
-
-    peaks, _ = sp.find_peaks(non_zero_column, height=210, distance=50, width=10)
-    _, _, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.90)
+    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
+    # Get two highest peaks
+    # sort values by highest value and return top 2 value indexes
+    # sort indexes from low to high (left to right)
+    ind = np.sort(np.argpartition(non_zero_column[peaks], -2)[-2:])
+    peaks = peaks[ind]
+    # Get width
+    _, _, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.80)
 
     # plt.plot(non_zero_column)
     # plt.scatter(peaks, non_zero_column[peaks], color="yellow")
@@ -141,7 +132,7 @@ def split_equal(matrix):
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
 
-    margin_horizontal = 10
+    margin_horizontal = 20
 
     left_valley = add_margin([left_ips[0], right_ips[0]], margin_horizontal)
     right_valley = add_margin([left_ips[1], right_ips[1]], margin_horizontal)
@@ -155,7 +146,7 @@ def split_equal(matrix):
     left_matrix = matrix[:, left_valley[0]:left_valley[1]]
     right_matrix = matrix[:, right_valley[0]:right_valley[1]]
 
-    # matrix_to_csv(right_matrix, "test")
+    # matrix_to_csv(matrix, "test")
     # # display plot
     # plt.plot(non_zero_column)
     # plt.scatter(peaks, non_zero_column[peaks], color="yellow")
@@ -177,14 +168,27 @@ def main():
     args = parser.parse_args()
     # Safety if no parameter have been given
     if not args.input:
-        print("No input paramater have been given.")
-        print("For help type --help")
-        exit()
+        args.input = ".\\video1.bag"
     # Check if the given file have bag extension
     if os.path.splitext(args.input)[1] != ".bag":
         print("The given file is not of correct file format.")
         print("Only .bag files are accepted")
         exit()
+    
+    total_frames = 306
+    frame_skip = 10
+    if args.input == ".\\video1.bag":
+        total_frames = 367
+        frame_skip = 20
+    elif args.input == ".\\video2.bag":
+        total_frames = 307
+        frame_skip = 190
+    elif args.input == ".\\video3.bag":
+        total_frames = 364
+        frame_skip = 10
+    elif args.input == ".\\video4.bag":
+        total_frames = 367
+        frame_skip = 10
 
     try:
         # Create pipeline
@@ -218,8 +222,6 @@ def main():
         peak_left = []
 
         i = 0
-        total_frames = 307
-        frame_skip = 190
         print(f"Skipping to frame {frame_skip}")
         progress.start()
         while True:
@@ -251,12 +253,15 @@ def main():
 
             # Remove background
             depth_image_bg = remove_background(depth_image_rg, depth_image_rg)
-            # depth_image_rg = remove_ground(depth_image_bg)
 
             ##############
             # Split View #
             ##############
             depth_image_left, depth_image_right, peak_values = split_equal(depth_image_bg)
+
+            # Remove noise above certain row
+            depth_image_left = remove_noise(depth_image_left)
+            depth_image_right = remove_noise(depth_image_right)
             ############
             # Analysis #
             ############
