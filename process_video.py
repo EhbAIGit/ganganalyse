@@ -26,7 +26,7 @@ import argparse
 # Import os.path for file path manipulation
 import os.path
 
-ground_margin = 150
+ground_margin = 50
 
 def matrix_to_csv(matrix, filename):
     np.savetxt(f"csv/{filename}.csv", matrix, delimiter=';', fmt='%i')
@@ -68,7 +68,7 @@ def real_distance(matrix):
 
 def remove_ground(matrix):
     def compare(x, median):
-        if np.absolute(x - median) <= ground_margin: return 0 # if difference bigger than 15cm, replace with 0
+        if np.absolute(x - median) <= ground_margin: return 0 # if difference bigger than 5cm, replace with 0
         else: return x
     vcompare = np.vectorize(compare)
 
@@ -268,7 +268,7 @@ def main():
             ##############
             # depth_image_left, depth_image_right = split_equal(depth_image_bg)
             depth_image_left, depth_image_right, peak_values, left_peak_matrix, right_peak_matrix  = split_equal(depth_image_bg)
-            if i == 97 or i == 171 or i == 244 or i == 307:
+            if i == 96 or i == 243 or i == 170 or i == 306:
                 print("---------------")
 
             ############
