@@ -92,11 +92,11 @@ try:
         if key & 0xFF == ord('a'):
             matrix_to_csv(depth_frame.get_data(), "matrix.csv")
 
-        if i == 96 or i == 243 or i == 170 or i == 306:
-            matrix_to_csv(depth_frame.get_data(), f"matrix_{i}.csv")
+        # if i == 96 or i == 243 or i == 170 or i == 306:
+        #     matrix_to_csv(depth_frame.get_data(), f"matrix_{i}.csv")
 
         i = i + 1
-        if i == 367:
+        if i == 307:
             break
     # out.release()
     cv2.destroyAllWindows()

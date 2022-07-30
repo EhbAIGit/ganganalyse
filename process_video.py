@@ -9,6 +9,7 @@
 import pyrealsense2 as rs
 # Import Numpy for easy array manipulation
 import numpy as np
+import matplotlib.pyplot as plt
 # Import OpenCV for easy image rendering
 import cv2
 
@@ -91,13 +92,16 @@ def remove_background(depth_matrix, matrix_remove_background):
     clipping_distance_in_meters = 1.5 #1 meter
     clipping_distance = clipping_distance_in_meters / depth_scale
 
-    # minimum distance of matrix = 340 (foot min distance), smaller than this is noise
-    min_distance = 330
-
-    # Notice that there is still noise
-
     grey_color = 0
-    return np.where((depth_matrix > clipping_distance) | (depth_matrix <= min_distance) , grey_color, matrix_remove_background)
+
+    # everything above row 150 smaller than 300 is not correct
+    min_distance = 350
+    matrix_removed_background = np.where((depth_matrix > clipping_distance), grey_color, matrix_remove_background)
+    matrix_removed_noise = np.where((depth_matrix[:300, :] < min_distance), grey_color, matrix_removed_background[:300, :])
+
+    matrix = np.vstack([matrix_removed_noise, matrix_removed_background[300:, :]])
+
+    return matrix
 
 def colorize_depth(matrix, alpha_value = 0.1):
     #tilde will reverse the grayscale (from 0- 255) as this is better for the colormap (red close, blue far)
@@ -117,7 +121,7 @@ def add_margin(array, margin):
 
 def split_equal(matrix):
     # Cleanup Manual
-    matrix = matrix[:, 50:-50] # cut sides
+    matrix = matrix[:, 100:-100] # cut sides
 
     # Cleanup Vertical (bottom)
     non_zero_bottom_index = np.nonzero(np.count_nonzero(matrix, axis=1))[0][-1]
@@ -127,8 +131,12 @@ def split_equal(matrix):
     # Cleanup Horizontal
     non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
 
-    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
+    peaks, _ = sp.find_peaks(non_zero_column, height=210, distance=50, width=10)
     _, _, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.90)
+
+    # plt.plot(non_zero_column)
+    # plt.scatter(peaks, non_zero_column[peaks], color="yellow")
+    # plt.show()
 
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
@@ -139,13 +147,22 @@ def split_equal(matrix):
     right_valley = add_margin([left_ips[1], right_ips[1]], margin_horizontal)
 
     # Remove vertical (top)
-    margin_vertical = 150
+    margin_vertical = 200
     top_index = 0 if matrix.shape[0] - margin_vertical < 0 else matrix.shape[0] - margin_vertical
     matrix = matrix[top_index:, :]
 
     # Remove horizontal by value & split
     left_matrix = matrix[:, left_valley[0]:left_valley[1]]
     right_matrix = matrix[:, right_valley[0]:right_valley[1]]
+
+    # matrix_to_csv(right_matrix, "test")
+    # # display plot
+    # plt.plot(non_zero_column)
+    # plt.scatter(peaks, non_zero_column[peaks], color="yellow")
+    # plt.scatter(left_valley, non_zero_column[left_valley], color="red")
+    # plt.scatter(right_valley, non_zero_column[right_valley], color="blue")
+    # plt.show()
+
 
     return left_matrix, right_matrix, non_zero_column[peaks]
 
@@ -201,8 +218,8 @@ def main():
         peak_left = []
 
         i = 0
-        total_frames = 367
-        frame_skip = 20
+        total_frames = 307
+        frame_skip = 190
         print(f"Skipping to frame {frame_skip}")
         progress.start()
         while True:
@@ -240,7 +257,6 @@ def main():
             # Split View #
             ##############
             depth_image_left, depth_image_right, peak_values = split_equal(depth_image_bg)
-
             ############
             # Analysis #
             ############
@@ -276,7 +292,7 @@ def main():
 
             i += 1
 
-            percentage = i / total_frames * 100
+            percentage = (i - frame_skip) / (total_frames - frame_skip) * 100
             if percentage < 100:
                 progress.update(percentage)
             else:
