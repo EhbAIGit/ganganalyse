@@ -6,6 +6,7 @@
 #####################################################
 
 # First import the library
+from turtle import color
 import pyrealsense2 as rs
 # Import Numpy for easy array manipulation
 import numpy as np
@@ -16,6 +17,7 @@ import cv2
 # import multiprocessing as mp
 
 # Math time
+import matplotlib.pyplot as plt
 from scipy import signal as sp
 
 # OS time
@@ -23,9 +25,6 @@ from scipy import signal as sp
 import argparse
 # Import os.path for file path manipulation
 import os.path
-
-from analyse_video import main as analyse
-from progress import Progress
 
 ground_margin = 50
 
@@ -128,7 +127,7 @@ def split_equal(matrix):
     non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
 
     peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
-    _, _, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.90)
+    widths, widths_heights, left_ips, right_ips = sp.peak_widths(non_zero_column, peaks, rel_height=0.90)
 
     left_ips = left_ips.astype(int)
     right_ips = right_ips.astype(int)
@@ -147,7 +146,10 @@ def split_equal(matrix):
     left_matrix = matrix[:, left_valley[0]:left_valley[1]]
     right_matrix = matrix[:, right_valley[0]:right_valley[1]]
 
-    return left_matrix, right_matrix, non_zero_column[peaks]
+    left_peak_matrix = matrix[:, peaks[0]]
+    right_peak_matrix = matrix[:, peaks[1]]
+
+    return left_matrix, right_matrix, non_zero_column[peaks], left_peak_matrix, right_peak_matrix
 
 # Streaming loop
 def main():
@@ -193,24 +195,23 @@ def main():
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
 
-        progress = Progress()
-
         min_right = []
         min_left = []
+        min_peak_right = []
+        min_peak_left = []
+        max_peak_right = []
+        max_peak_left = []
         peak_right = []
         peak_left = []
 
         i = 0
-        total_frames = 367
-        frame_skip = 20
-        print(f"Skipping to frame {frame_skip}")
-        progress.start()
+        print(f"Skipping to frame 20")
         while True:
-            while i % total_frames < frame_skip:
+            while i % 367 < 20:
                 # Get frameset of color and depth
                 frames = pipeline.wait_for_frames()
                 i += 1
-            # print(f"frame: {i}")
+            print(f"frame: {i}")
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
 
@@ -239,7 +240,9 @@ def main():
             ##############
             # Split View #
             ##############
-            depth_image_left, depth_image_right, peak_values = split_equal(depth_image_bg)
+            depth_image_left, depth_image_right, peak_values, left_peak_matrix, right_peak_matrix  = split_equal(depth_image_bg)
+            if i == 96 or i == 243 or i == 170 or i == 306:
+                print("---------------")
 
             ############
             # Analysis #
@@ -249,9 +252,17 @@ def main():
             min_right.append(np.min(depth_image_left[depth_image_left!=0]))
             min_left.append(np.min(depth_image_right[depth_image_right!=0]))
 
+            # Lengte bepalen
+            max_peak_right.append(np.max(left_peak_matrix))
+            max_peak_left.append(np.max(right_peak_matrix))
+            min_peak_right.append(np.min(left_peak_matrix[left_peak_matrix!=0]))
+            min_peak_left.append(np.min(right_peak_matrix[right_peak_matrix!=0]))
+
             # Moment dat benen naast elkaar staan
             peak_right.append(peak_values[0])
             peak_left.append(peak_values[1])
+            if peak_values[0] in range(peak_values[1] - 5, peak_values[1] + 5):
+                print("---------------------------")
 
 
             #################
@@ -275,20 +286,34 @@ def main():
             # out.write(original)
 
             i += 1
+            if i == 367:
+                figure, axis = plt.subplots(2, 2)
 
-            percentage = i / total_frames * 100
-            if percentage < 100:
-                progress.update(percentage)
-            else:
-                progress.update(100)
-            
-            if i == total_frames:
-                progress.finish()
-                min_values = np.vstack([min_right, min_left])
-                peak = np.vstack([peak_right, peak_left])
-                
-                cv2.destroyAllWindows()
-                analyse(min_values, peak, ground_margin)
+                # Minimum
+                matrix_to_csv(np.vstack([min_right, min_left]), f"min_{ground_margin}")
+                axis[0, 0].plot(min_right, color="red")
+                axis[0, 0].plot(min_left, color="blue")
+                axis[0, 0].set_title("Minimum")
+
+                # Maximum
+                matrix_to_csv(np.vstack([max_peak_right, max_peak_left]), f"max_peak_{ground_margin}")
+                axis[0, 1].plot(max_peak_right, color="red")
+                axis[0, 1].plot(max_peak_left, color="blue")
+                axis[0, 1].set_title("Maximum on peak matrix")
+
+                matrix_to_csv(np.vstack([min_peak_right, min_peak_left]), f"min_peak_{ground_margin}")
+                axis[1, 0].plot(min_peak_right, color="red")
+                axis[1, 0].plot(min_peak_left, color="blue")
+                axis[1, 0].set_title("Minimum on peak matrix")
+
+                # Peaks
+                matrix_to_csv(np.vstack([peak_right, peak_left]), f"peak_{ground_margin}")
+                axis[1, 1].plot(peak_right, color="red")
+                axis[1, 1].plot(peak_left, color="blue")
+                axis[1, 1].set_title("Peaks")
+
+                # Combine all the operations and display
+                plt.show()
                 break
 
             #######################
@@ -298,6 +323,8 @@ def main():
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
                 break
+        # out.release()
+        cv2.destroyAllWindows()
 
 
 

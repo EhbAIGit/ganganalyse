@@ -10,7 +10,10 @@ min_stack = {}
 min_peak_stack = {}
 max_peak_stack = {}
 
-margins = list(range(40, 210, 10))
+path = f"C:\\Users\\tibod\\Documents\\Visual Code\\final-work\\csv\\"
+
+# margins = list(range(40, 210, 10))
+margins = [50]
 
 def color_scatter(axis, x_l, y_l, x_r, y_r, set_label=False):
     color = iter(plt.cm.rainbow(np.linspace(0, 1, len(x_l) + len(x_r))))
@@ -120,25 +123,25 @@ def peakdet(v, delta, margin = 0, x = None):
 
 for selected_margin in margins:
     min_values = []
-    with open(f"csv/min_{selected_margin}.csv") as csvfile:
+    with open(f"{path}min_{selected_margin}.csv") as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
         for row in reader: # each row is a list
             min_values.append(row)
 
     min_peak = []
-    with open(f"csv/min_peak_{selected_margin}.csv") as csvfile:
+    with open(f"{path}min_peak_{selected_margin}.csv") as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
         for row in reader: # each row is a list
             min_peak.append(row)
 
     max_peak = []
-    with open(f"csv/max_peak_{selected_margin}.csv") as csvfile:
+    with open(f"{path}max_peak_{selected_margin}.csv") as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
         for row in reader: # each row is a list
             max_peak.append(row)
 
     peak = []
-    with open(f"csv/peak_{selected_margin}.csv") as csvfile:
+    with open(f"{path}peak_{selected_margin}.csv") as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
         for row in reader: # each row is a list
             peak.append(row)
@@ -253,7 +256,7 @@ for selected_margin in margins:
     # print(max_peak[0][valley_left_x] - valley_left_min[:,1])
 
     # Combine all the operations and display
-    # plt.show()
+    plt.show()
 print("min_values")
 print(min_stack)
 # print(min(zip(min_stack.values(), min_stack.keys())))

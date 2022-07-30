@@ -1,6 +1,11 @@
 # Math time
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+import csv
+
+selected_margin = 50
+path = f"C:\\Users\\tibod\\Documents\\Visual Code\\final-work\\csv\\"
 
 def get_distance(first, second):
     second_distance = []
@@ -123,8 +128,35 @@ def peakdet(v, delta, margin = 0, x = None):
 
     return array(maxtab), array(mintab)
 
-def main(min_values, peak, ground_margin):
+def main():
+    global selected_margin
+    min_values = []
+    with open(f"{path}min_{selected_margin}.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
+        for row in reader: # each row is a list
+            min_values.append(row)
+
+    min_peak = []
+    with open(f"{path}min_peak_{selected_margin}.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
+        for row in reader: # each row is a list
+            min_peak.append(row)
+
+    max_peak = []
+    with open(f"{path}max_peak_{selected_margin}.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
+        for row in reader: # each row is a list
+            max_peak.append(row)
+
+    peak = []
+    with open(f"{path}peak_{selected_margin}.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
+        for row in reader: # each row is a list
+            peak.append(row)
+
     min_values = np.array(min_values)
+    min_peak = np.array(min_peak)
+    max_peak = np.array(max_peak)
     peak = np.array(peak)
 
     margin = get_margin_for_valley(peak, min_values)
@@ -148,31 +180,17 @@ def main(min_values, peak, ground_margin):
     right_stride_times = get_time(valley_right_x)
     left_stride_times = get_time(valley_left_x)
 
-    print(f"Stride distance(s) left foot: {left_stride_lengths}")
-    print(f"Stride duration(s) left foot: {left_stride_times}")
+    # print(f"x-values: {valley_right_x}")
+    # print(f"IC right foot: {valley_right_y}")
+    # print(f"Presw left foot: {min_values[1][valley_right_x]}")
+    print(f"Stride distance left foot: {left_stride_lengths}")
+    print(f"Stride duration left foot: {left_stride_times}")
     print(f"---")
-    print(f"Stride distance(s) right foot: {right_stride_lengths}")
-    print(f"Stride duration(s) right foot: {right_stride_times}")
-
-    # Display Plot
-
-    plt.plot(min_values[0], color="red", label="right foot")
-    plt.plot(min_values[1], color="blue", label="left foot")
-
-    plt.scatter(valley_right_x, valley_right_y, color="yellow")
-    plt.scatter(valley_right_x, min_values[1][valley_right_x], color="yellow")
-    plt.scatter(valley_left_x, valley_left_y, color="yellow")
-    plt.scatter(valley_left_x, min_values[0][valley_left_x], color="yellow")
-
-    plt.plot([valley_right_x, valley_right_x], [valley_right_y, min_values[1][valley_right_x]], color="yellow")
-    plt.plot([valley_left_x, valley_left_x], [valley_left_y, min_values[0][valley_left_x]], color="yellow")
-
-    plt.title("Minimum Depth of Right and Left Foot")
-    plt.ylabel('depth')
-    plt.xlabel('frames', loc="left")
-    plt.legend(bbox_to_anchor=(0.5,-0.1,0.5,0.2),
-                mode="expand", borderaxespad=0, ncol=3)
-    plt.show()
+    # print(f"x-values: {valley_left_x}")
+    # print(f"IC left foot: {valley_left_y}")
+    # print(f"Presw right foot: {min_values[0][valley_left_x]}")
+    print(f"Stride distance right foot: {right_stride_lengths}")
+    print(f"Stride duration right foot: {right_stride_times}")
 
 if __name__ == "__main__":
     main()
