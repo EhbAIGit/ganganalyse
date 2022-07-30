@@ -96,7 +96,7 @@ try:
         #     matrix_to_csv(depth_frame.get_data(), f"matrix_{i}.csv")
 
         i = i + 1
-        if i == 307:
+        if i == 500:
             break
     # out.release()
     cv2.destroyAllWindows()
