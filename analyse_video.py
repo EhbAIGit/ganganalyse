@@ -81,6 +81,12 @@ def get_time_difference(first, second):
 
     return time_differences
 
+def limp_calc(right, left):
+    right_avg = np.average(right)
+    left_avg = np.average(left)
+
+    return right_avg - left_avg
+
 def get_margin_for_valley(peaks, min_values):
     # Will get x values of where the peaks are at the same hight
     idx = np.argwhere(np.diff(np.sign(peaks[0] - peaks[1]))).flatten()
@@ -190,6 +196,8 @@ def main(min_values, peak, f_name):
     right_stride_times = get_time(valley_right_x)
     left_stride_times = get_time(valley_left_x)
 
+    limp = limp_calc(valley_right_y, valley_left_y)
+
     # write to file
     f = open(f"graphs/{f_name}.txt", "w")
     f.write(f"Stride distance(s) right foot: {right_stride_lengths}\n")
@@ -200,7 +208,13 @@ def main(min_values, peak, f_name):
     f.write(f"Stride duration(s) left foot: {left_stride_times}\n")
     f.write(f"IC's Left Foot: {valley_left_x}\n")
     f.write(f"---\n")
-    f.write(f"Time between each IC: {stride_difference}")
+    f.write(f"Time between each IC: {stride_difference}\n")
+    f.write(f"---\n")
+    f.write(f"IC difference: {limp}\n")
+    if limp < 0:
+        f.write(f"Potential limp left leg")
+    else:
+        f.write(f"Potential limp right leg")
     f.close()
 
     # Display Plot
