@@ -79,7 +79,7 @@ def get_time_difference(first, second):
 
     time_differences = np.array(time_differences) / 30 * 1000
 
-    return time_differences
+    return time_differences[1:][::2], time_differences[0:][::2]
 
 def limp_calc(right, left):
     right_avg = np.average(right)
@@ -187,34 +187,54 @@ def main(min_values, peak, f_name):
     if np.min(valley_left_x) < np.min(valley_right_x): # select the foot that has first IC
         # If this is the left foot
         left_stride_lengths, right_stride_lengths = get_distance(min_values[0][valley_left_x] - valley_left_y, min_values[1][valley_right_x] - valley_right_y)
-        stride_difference = get_time_difference(valley_left_x, valley_right_x)
+        left_step_to, right_step_to = get_time_difference(valley_left_x, valley_right_x)
     else:
         # If this is the right foot
         right_stride_lengths, left_stride_lengths = get_distance(min_values[1][valley_right_x] - valley_right_y, min_values[0][valley_left_x] - valley_left_y)
-        stride_difference = get_time_difference(valley_right_x, valley_left_x)
+        right_step_to, left_step_to = get_time_difference(valley_right_x, valley_left_x)
     
     right_stride_times = get_time(valley_right_x)
     left_stride_times = get_time(valley_left_x)
 
-    limp = limp_calc(valley_right_y, valley_left_y)
+    limp_distance = limp_calc(valley_right_y, valley_left_y)
+    limp_time = limp_calc(right_step_to, left_step_to)
 
     # write to file
     f = open(f"graphs/{f_name}.txt", "w")
-    f.write(f"Stride distance(s) right foot: {right_stride_lengths}\n")
-    f.write(f"Stride duration(s) right foot: {right_stride_times}\n")
+    f.write(f"##############\n")
+    f.write(f"# Raw Values #\n")
+    f.write(f"##############\n")
     f.write(f"IC's Right Foot: {valley_right_x}\n")
+    f.write(f"IC's Depth Right Foot: {valley_right_y}\n")
+    f.write(f"---\n")
+    f.write(f"IC's Left Foot: {valley_left_x}\n")
+    f.write(f"IC's Depth Right Foot: {valley_left_y}\n\n")
+    f.write(f"##############################\n")
+    f.write(f"# Stride Distance & Duration #\n")
+    f.write(f"##############################\n")
+    f.write(f"Stride distance(s) right foot: {right_stride_lengths}\n")
+    f.write(f"Stride duration(s) right foot (ms): {right_stride_times}\n")
+    f.write(f"Stride step to duration(s) right foot (ms): {right_step_to}\n")
     f.write(f"---\n")
     f.write(f"Stride distance(s) left foot: {left_stride_lengths}\n")
-    f.write(f"Stride duration(s) left foot: {left_stride_times}\n")
-    f.write(f"IC's Left Foot: {valley_left_x}\n")
+    f.write(f"Stride duration(s) left foot (ms): {left_stride_times}\n")
+    f.write(f"Stride step to duration(s) left foot (ms): {left_step_to}\n\n")
+    f.write(f"###################\n")
+    f.write(f"# Stride Analysis #\n")
+    f.write(f"###################\n")
+    f.write(f"IC difference duration (ms): {limp_time}\n")
+    if abs(limp_time) > 100:
+        if limp_time > 0:
+            f.write(f"Potential limp left leg\n")
+        else:
+            f.write(f"Potential limp right leg\n")
     f.write(f"---\n")
-    f.write(f"Time between each IC: {stride_difference}\n")
-    f.write(f"---\n")
-    f.write(f"IC difference: {limp}\n")
-    if limp < 0:
-        f.write(f"Potential limp left leg")
-    else:
-        f.write(f"Potential limp right leg")
+    f.write(f"IC difference distance: {limp_distance}\n")
+    if abs(limp_distance) > 20:
+        if limp_distance < 0:
+            f.write(f"Potential limp left leg")
+        else:
+            f.write(f"Potential limp right leg")
     f.close()
 
     # Display Plot
