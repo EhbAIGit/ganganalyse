@@ -190,6 +190,9 @@ def main():
         total_frames = 367
         frame_skip = 10
 
+
+    f_name = args.input[2:-4]
+
     try:
         # Create pipeline
         pipeline = rs.pipeline()
@@ -213,6 +216,12 @@ def main():
 
         cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
+
+        # Define video
+        # fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+        # out = cv2.VideoWriter(f"videos/{f_name}_background.avi", fourcc, 30, (640, 480))
+        # out_right = cv2.VideoWriter(f"videos/{f_name}_right.avi", fourcc, 30, (640, 480))
+        # out_left = cv2.VideoWriter(f"videos/{f_name}_left.avi", fourcc, 30, (640, 480))
 
         progress = Progress()
 
@@ -293,7 +302,17 @@ def main():
             cv2.imshow('Image Feed Right leg', depth_colormap_left)
             # cv2.imshow('Original', original)
 
+            ##################
+            # Write to video #
+            ##################
+
             # out.write(original)
+            # out_right.write(depth_colormap_right)
+            # out_left.write(depth_colormap_left)
+
+            ################
+            # Progress Bar #
+            ################
 
             i += 1
 
@@ -303,13 +322,25 @@ def main():
             else:
                 progress.update(100)
             
+            #################
+            # Analyse Video #
+            #################
+
             if i == total_frames:
                 progress.finish()
                 min_values = np.vstack([min_right, min_left])
                 peak = np.vstack([peak_right, peak_left])
-                
+
+                # End video
+                # out.release()
+                # out_right.release()
+                # out_left.release()
+
+                # Write values to csv
+                matrix_to_csv(min_values, f_name)
+
                 cv2.destroyAllWindows()
-                analyse(min_values, peak, ground_margin)
+                analyse(min_values, peak, f_name)
                 break
 
             #######################
@@ -319,12 +350,6 @@ def main():
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
                 break
-
-
-
-
-
-
 
     finally:
         pipeline.stop()

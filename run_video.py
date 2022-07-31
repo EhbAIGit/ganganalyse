@@ -61,7 +61,8 @@ try:
     colorizer = rs.colorizer()
 
     # fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-    # out = cv2.VideoWriter('videos/original.avi', fourcc, 30, (640, 480))
+    f_name = args.input[2:-4]
+    # out = cv2.VideoWriter(f"videos/{f_name}_original.avi", fourcc, 30, (640, 480))
 
     i = 0
     # Streaming loop
@@ -96,7 +97,7 @@ try:
         #     matrix_to_csv(depth_frame.get_data(), f"matrix_{i}.csv")
 
         i = i + 1
-        if i == 500:
+        if i == 307:
             break
     # out.release()
     cv2.destroyAllWindows()

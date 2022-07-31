@@ -123,7 +123,7 @@ def peakdet(v, delta, margin = 0, x = None):
 
     return array(maxtab), array(mintab)
 
-def main(min_values, peak, ground_margin):
+def main(min_values, peak, f_name):
     min_values = np.array(min_values)
     peak = np.array(peak)
 
@@ -148,11 +148,16 @@ def main(min_values, peak, ground_margin):
     right_stride_times = get_time(valley_right_x)
     left_stride_times = get_time(valley_left_x)
 
-    print(f"Stride distance(s) left foot: {left_stride_lengths}")
-    print(f"Stride duration(s) left foot: {left_stride_times}")
-    print(f"---")
-    print(f"Stride distance(s) right foot: {right_stride_lengths}")
-    print(f"Stride duration(s) right foot: {right_stride_times}")
+    # write to file
+    f = open(f"graphs/{f_name}.txt", "w")
+    f.write(f"Stride distance(s) right foot: {right_stride_lengths}\n")
+    f.write(f"Stride duration(s) right foot: {right_stride_times}\n")
+    f.write(f"IC's Right Foot: {valley_right_x}\n")
+    f.write(f"---\n")
+    f.write(f"Stride distance(s) left foot: {left_stride_lengths}\n")
+    f.write(f"Stride duration(s) left foot: {left_stride_times}\n")
+    f.write(f"IC's Left Foot: {valley_left_x}\n")
+    f.close()
 
     # Display Plot
 
@@ -172,7 +177,9 @@ def main(min_values, peak, ground_margin):
     plt.xlabel('frames', loc="left")
     plt.legend(bbox_to_anchor=(0.5,-0.1,0.5,0.2),
                 mode="expand", borderaxespad=0, ncol=3)
+    plt.savefig(f"graphs/{f_name}.png")
     plt.show()
+    plt.close()
 
 if __name__ == "__main__":
     main()

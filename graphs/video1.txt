@@ -1,0 +1,7 @@
+Stride distance(s) right foot: [913 912]
+Stride duration(s) right foot: [4600]
+IC's Right Foot: [150 288]
+---
+Stride distance(s) left foot: [885]
+Stride duration(s) left foot: [4900]
+IC's Left Foot: [ 76 223]
