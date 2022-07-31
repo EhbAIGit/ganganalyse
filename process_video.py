@@ -154,7 +154,6 @@ def split_equal(matrix):
     # plt.scatter(right_valley, non_zero_column[right_valley], color="blue")
     # plt.show()
 
-
     return left_matrix, right_matrix, non_zero_column[peaks]
 
 # Streaming loop

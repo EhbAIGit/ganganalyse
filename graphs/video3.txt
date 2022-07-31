@@ -5,3 +5,6 @@ IC's Right Foot: [ 41 116 186 264 340]
 Stride distance(s) left foot: [433 540 533 584 573]
 Stride duration(s) left foot: [2500, 2367, 2567, 2000]
 IC's Left Foot: [ 65 140 211 288 348]
+---
+Time between each IC: [ 800.         1700.          800.         1533.33333333  833.33333333
+ 1766.66666667  800.         1733.33333333  266.66666667]
