@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def get_distance(first, second):
-    second_distance = []
     first_distance = []
+    second_distance = []
 
     first_index_list = []
     second_index_list = []
@@ -40,6 +40,46 @@ def get_time(a):
     for i in range(1, len(a)):
         time_mm.append(round((a[i] - a[i - 1])/30*1000))
     return time_mm
+
+def get_time_difference(first, second):
+    first_times = []
+    second_times = []
+
+    first_index_list = []
+    second_index_list = []
+
+    for i in range(len(first)):
+        first_index_list.append(i)
+        first_index_list.append(i)
+    
+    for i in range(len(second)):
+        second_index_list.append(i)
+        second_index_list.append(i)
+
+    if len(first) == len(second):
+        second_index_list = second_index_list[:-1]
+        first_index_list = first_index_list[1:]
+    else:
+        first_index_list = first_index_list[1:-1]
+
+    for i in first_index_list:
+        first_times.append(first[i])
+    for i in second_index_list:
+        second_times.append(second[i])
+    
+    first_times = np.array(first_times)
+    second_times = np.array(second_times)
+
+    time_differences = []
+    for i in range(len(second_times)):
+        if i % 2 == 0:
+            time_differences.append(second_times[i] - first_times[i])
+        else:
+            time_differences.append(first_times[i] - second_times[i])
+
+    time_differences = np.array(time_differences) / 30 * 1000
+
+    return time_differences
 
 def get_margin_for_valley(peaks, min_values):
     # Will get x values of where the peaks are at the same hight
@@ -141,9 +181,11 @@ def main(min_values, peak, f_name):
     if np.min(valley_left_x) < np.min(valley_right_x): # select the foot that has first IC
         # If this is the left foot
         left_stride_lengths, right_stride_lengths = get_distance(min_values[0][valley_left_x] - valley_left_y, min_values[1][valley_right_x] - valley_right_y)
+        stride_difference = get_time_difference(valley_left_x, valley_right_x)
     else:
         # If this is the right foot
         right_stride_lengths, left_stride_lengths = get_distance(min_values[1][valley_right_x] - valley_right_y, min_values[0][valley_left_x] - valley_left_y)
+        stride_difference = get_time_difference(valley_right_x, valley_left_x)
     
     right_stride_times = get_time(valley_right_x)
     left_stride_times = get_time(valley_left_x)
@@ -157,6 +199,8 @@ def main(min_values, peak, f_name):
     f.write(f"Stride distance(s) left foot: {left_stride_lengths}\n")
     f.write(f"Stride duration(s) left foot: {left_stride_times}\n")
     f.write(f"IC's Left Foot: {valley_left_x}\n")
+    f.write(f"---\n")
+    f.write(f"Time between each IC: {stride_difference}")
     f.close()
 
     # Display Plot
