@@ -66,6 +66,7 @@ def remove_ground(matrix):
     
     return np.array(new_matrix)
 
+# remove all values larger than certain value
 def remove_background(depth_matrix, matrix_remove_background):
     # Getting the depth sensor's depth scale (see rs-align example for explanation)
     depth_scale = 0.0010000000474974513
@@ -82,6 +83,7 @@ def remove_background(depth_matrix, matrix_remove_background):
 
     return matrix_removed_background
 
+# remove noise above certain row
 def remove_noise(matrix, distance = 500):
     grey_color = 0
     height = matrix.shape[0]
@@ -90,10 +92,12 @@ def remove_noise(matrix, distance = 500):
     matrix = np.vstack([matrix_rn, matrix[height:, :]])
     return matrix
 
+# Colorize image for view
 def colorize_depth(matrix, alpha_value = 0.1):
     #tilde will reverse the grayscale (from 0- 255) as this is better for the colormap (red close, blue far)
     return cv2.applyColorMap(~cv2.convertScaleAbs(matrix, alpha=alpha_value), cv2.COLORMAP_TURBO)
 
+# split_equal helper function to add horizontal margin
 def add_margin(array, margin):
     if array[0] - margin > 0:
         array[0] = array[0] - margin
@@ -105,6 +109,8 @@ def add_margin(array, margin):
         array[1] = 540
     return array
 
+# Split view in left and right matrix
+# Define peak and width with signal processing
 def split_equal(matrix):
     # Cleanup Manual
     matrix = matrix[:, 100:-100] # cut sides
@@ -116,7 +122,7 @@ def split_equal(matrix):
 
     # Cleanup Horizontal
     non_zero_column = np.count_nonzero(matrix, axis=0) # count the numbers that are not 0 for each column
-    peaks, _ = sp.find_peaks(non_zero_column, height=200, distance=50, width=10)
+    peaks, _ = sp.find_peaks(non_zero_column, height=150, distance=50, width=10)
     # Get two highest peaks
     # sort values by highest value and return top 2 value indexes
     # sort indexes from low to high (left to right)
@@ -174,21 +180,21 @@ def main():
         print("Only .bag files are accepted")
         exit()
     
-    total_frames = 306
-    frame_skip = 10
-    if args.input == ".\\video1.bag":
+    if args.input == ".\\video1.bag": # Slow walking
         total_frames = 367
         frame_skip = 20
-    elif args.input == ".\\video2.bag":
+    elif args.input == ".\\video2.bag": # Normal walking
         total_frames = 307
         frame_skip = 190
-    elif args.input == ".\\video3.bag":
+    elif args.input == ".\\video3.bag": # Limp walking
         total_frames = 364
         frame_skip = 10
-    elif args.input == ".\\video4.bag":
+    elif args.input == ".\\video4.bag": # Limp walking female
         total_frames = 367
         frame_skip = 10
-
+    elif args.input == ".\\video5.bag": # Reflective ground
+        total_frames = 270
+        frame_skip = 10
 
     f_name = args.input[2:-4]
 
