@@ -28,7 +28,6 @@ import os.path
 from numba import jit, vectorize, float64, uint16
 from analyse_video import main as analyse
 from progress import Progress
-import time
 
 ground_margin = 60
 
@@ -70,6 +69,7 @@ def remove_ground(matrix):
     return new_matrix
 
 # remove all values larger than certain value
+# @jit(nopython=True)
 def remove_background(depth_matrix, matrix_remove_background):
     # Getting the depth sensor's depth scale (see rs-align example for explanation)
     depth_scale = 0.0010000000474974513
