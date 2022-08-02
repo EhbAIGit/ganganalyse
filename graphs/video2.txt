@@ -11,16 +11,16 @@ IC's Depth Right Foot: [319 333]
 # Stride Distance & Duration #
 ##############################
 Stride distance(s) right foot: [939 801]
-Stride duration(s) right foot: [1567, 1467]
-Stride step to duration(s) right foot: [766.66666667 700.        ]
+Stride duration(s) right foot (ms): [1567, 1467]
+Stride step to duration(s) right foot (ms): [766.66666667 700.        ]
 ---
 Stride distance(s) left foot: [949 906]
-Stride duration(s) left foot: [1533]
-Stride step to duration(s) left foot: [800.         766.66666667]
+Stride duration(s) left foot (ms): [1533]
+Stride step to duration(s) left foot (ms): [800.         766.66666667]
 
 ###################
 # Stride Analysis #
 ###################
-IC difference duration: -50.0
+IC difference duration (ms): -50.0
 ---
 IC difference distance: 0.0

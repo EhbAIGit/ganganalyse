@@ -342,7 +342,8 @@ def main():
                 # out_left.release()
 
                 # Write values to csv
-                matrix_to_csv(min_values, f_name)
+                matrix_to_csv(min_values, f"{f_name}_min_values")
+                matrix_to_csv(peak, f"{f_name}_peaks")
 
                 cv2.destroyAllWindows()
                 analyse(min_values, peak, f_name)

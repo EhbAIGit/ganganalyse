@@ -1,6 +1,7 @@
 # Math time
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 
 def get_distance(first, second):
     first_distance = []
@@ -259,5 +260,20 @@ def main(min_values, peak, f_name):
     plt.show()
     plt.close()
 
+def get_csv(f_name):
+    min_values = []
+    peaks = []
+    with open(f"csv/{f_name}_min_values.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
+        for row in reader: # each row is a list
+            min_values.append(row)
+    with open(f"csv/{f_name}_peaks.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
+        for row in reader: # each row is a list
+            peaks.append(row)
+    return min_values, peaks
+
 if __name__ == "__main__":
-    main()
+    f_name = "video1"
+    min_value, peak = get_csv(f_name)
+    main(min_value, peak, f_name)
