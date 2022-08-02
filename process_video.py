@@ -25,8 +25,10 @@ import argparse
 # Import os.path for file path manipulation
 import os.path
 
+from numba import jit, vectorize, float64, uint16
 from analyse_video import main as analyse
 from progress import Progress
+import time
 
 ground_margin = 60
 
@@ -51,20 +53,21 @@ def real_distance(matrix):
             return np.sqrt(b_exp)
     return np.vectorize(pythagoras)(matrix)
 
-def remove_ground(matrix):
-    def compare(x, median):
-        if np.absolute(x - median) <= ground_margin: return 0 # if difference bigger than 5cm, replace with 0
-        else: return x
-    vcompare = np.vectorize(compare)
+@vectorize([uint16(uint16, float64)], nopython=True)
+def compare(x, median):
+    if np.absolute(x - median) <= ground_margin: return 0 # if difference bigger than 5cm, replace with 0
+    else: return x
 
-    new_matrix = []
-    for i in range(len(matrix)):
-        row = matrix[i]
-        row_median = np.median(row[row != 0])
-        if not np.isnan(row_median):
-            new_matrix.append(vcompare(row, row_median))
-    
-    return np.array(new_matrix)
+def row_loop(row):
+    row_median = np.median(row[row != 0])
+    if not np.isnan(row_median):
+        return compare(row, row_median)
+    else:
+        return row
+
+def remove_ground(matrix):
+    new_matrix = np.array([row_loop(row) for row in matrix])
+    return new_matrix
 
 # remove all values larger than certain value
 def remove_background(depth_matrix, matrix_remove_background):
@@ -263,7 +266,6 @@ def main():
 
             # Remove Ground
             depth_image_rg = remove_ground(depth_image)
-            # depth_image_bg = remove_background(depth_image, depth_image)
 
             # Remove background
             depth_image_bg = remove_background(depth_image_rg, depth_image_rg)
@@ -276,6 +278,7 @@ def main():
             # Remove noise above certain row
             depth_image_left = remove_noise(depth_image_left)
             depth_image_right = remove_noise(depth_image_right)
+
             ############
             # Analysis #
             ############
