@@ -182,20 +182,23 @@ def main():
         print("The given file is not of correct file format.")
         print("Only .bag files are accepted")
         exit()
+
+    total_frames = 500
+    frame_skip = 0
     
-    if args.input == ".\\video1.bag": # Slow walking
+    if "video1.bag" in args.input:  # Slow walking
         total_frames = 367
         frame_skip = 20
-    elif args.input == ".\\video2.bag": # Normal walking
+    elif "video2.bag" in args.input: # Normal walking
         total_frames = 307
         frame_skip = 190
-    elif args.input == ".\\video3.bag": # Limp walking
+    elif "video3.bag" in args.input: # Limp walking
         total_frames = 364
         frame_skip = 10
-    elif args.input == ".\\video4.bag": # Limp walking female
+    elif "video4.bag" in args.input: # Limp walking female
         total_frames = 367
         frame_skip = 10
-    elif args.input == ".\\video5.bag": # Reflective ground
+    elif "video5.bag" in args.input: # Reflective ground
         total_frames = 270
         frame_skip = 10
 
