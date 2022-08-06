@@ -351,6 +351,14 @@ def main():
                 analyse(min_values, peak, f_name, not args.no_gui)
                 break
 
+            #######################
+            # Wait for keypresses #
+            #######################
+            key = cv2.waitKey(1)
+            # Press esc or 'q' to close the image window
+            if key & 0xFF == ord('q') or key == 27:
+                break
+
     finally:
         pipeline.stop()
 
