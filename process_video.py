@@ -13,9 +13,6 @@ import matplotlib.pyplot as plt
 # Import OpenCV for easy image rendering
 import cv2
 
-# Import multiprocessing
-# import multiprocessing as mp
-
 # Math time
 from scipy import signal as sp
 
@@ -25,7 +22,7 @@ import argparse
 # Import os.path for file path manipulation
 import os.path
 
-from numba import jit, vectorize, float64, uint16
+from numba import vectorize, float64, uint16
 from analyse_video import main as analyse
 from progress import Progress
 
@@ -171,12 +168,11 @@ def main():
     parser = argparse.ArgumentParser(description="Read recorded bag file and display depth stream in jet colormap.\
                                     Remember to change the stream fps and format to match the recorded.")
     # Add argument which takes path to a bag file as an input
-    parser.add_argument("-i", "--input", type=str, help="Path to the bag file")
+    parser.add_argument("-ng", "--no_gui", help="Run file without GUI", action="store_true")
+    parser.add_argument("-vo", "--video_output", help="Bag file to avi", action="store_true")
+    parser.add_argument("-i", "--input", type=str, help="Path to the bag file", default="video1.bag")
     # Parse the command line arguments to an object
     args = parser.parse_args()
-    # Safety if no parameter have been given
-    if not args.input:
-        args.input = ".\\video1.bag"
     # Check if the given file have bag extension
     if os.path.splitext(args.input)[1] != ".bag":
         print("The given file is not of correct file format.")
@@ -202,7 +198,7 @@ def main():
         total_frames = 270
         frame_skip = 10
 
-    f_name = args.input[2:-4]
+    f_name = os.path.basename(args.input)[:-4] # Get base name, remove extention
 
     try:
         # Create pipeline
@@ -225,14 +221,14 @@ def main():
         playback = profile.get_device().as_playback()
         playback.set_real_time(False)
 
-        cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
+        if not args.no_gui:
+            cv2.namedWindow('Image Feed Left leg', cv2.WINDOW_NORMAL)
+            cv2.namedWindow('Image Feed Right leg', cv2.WINDOW_NORMAL)
 
-        # Define video
-        # fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-        # out = cv2.VideoWriter(f"videos/{f_name}_background.avi", fourcc, 30, (640, 480))
-        # out_right = cv2.VideoWriter(f"videos/{f_name}_right.avi", fourcc, 30, (640, 480))
-        # out_left = cv2.VideoWriter(f"videos/{f_name}_left.avi", fourcc, 30, (640, 480))
+        if args.video_output:
+            # Define video
+            fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+            out = cv2.VideoWriter(f"videos/{f_name}_background.avi", fourcc, 30, (640, 480))
 
         progress = Progress()
 
@@ -294,32 +290,32 @@ def main():
             peak_right.append(peak_values[0])
             peak_left.append(peak_values[1])
 
+            if not args.no_gui or args.video_output:
+                original = colorize_depth(depth_image_bg)
 
-            #################
-            # Render images #
-            #################
-            #   depth align to color on left
-            #   depth on right
-            depth_colormap_left = colorize_depth(depth_image_left)
-            depth_colormap_right = colorize_depth(depth_image_right)
-            # original = colorize_depth(depth_image_bg)
+            if not args.no_gui:
+                #################
+                # Render images #
+                #################
+                #   depth align to color on left
+                #   depth on right
+                depth_colormap_left = colorize_depth(depth_image_left)
+                depth_colormap_right = colorize_depth(depth_image_right)
 
-            # note that left leg = right image and vise versa
-            # reshape needs to be bigger
-            cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[1] * 3, depth_image_right.shape[0] * 3)
-            cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[1] * 3, depth_image_left.shape[0] * 3)
-            # cv2.resizeWindow('Original', 1920, 1440)
-            cv2.imshow('Image Feed Left leg', depth_colormap_right)
-            cv2.imshow('Image Feed Right leg', depth_colormap_left)
-            # cv2.imshow('Original', original)
+                # note that left leg = right image and vise versa
+                # reshape needs to be bigger
+                cv2.resizeWindow('Image Feed Left leg', depth_image_right.shape[1] * 3, depth_image_right.shape[0] * 3)
+                cv2.resizeWindow('Image Feed Right leg', depth_image_left.shape[1] * 3, depth_image_left.shape[0] * 3)
+                # cv2.resizeWindow('Original', 1920, 1440)
+                cv2.imshow('Image Feed Left leg', depth_colormap_right)
+                cv2.imshow('Image Feed Right leg', depth_colormap_left)
+                # cv2.imshow('Original', original)
 
-            ##################
-            # Write to video #
-            ##################
-
-            # out.write(original)
-            # out_right.write(depth_colormap_right)
-            # out_left.write(depth_colormap_left)
+            if args.video_output:
+                ##################
+                # Write to video #
+                ##################
+                out.write(original)
 
             ################
             # Progress Bar #
@@ -343,24 +339,16 @@ def main():
                 peak = np.vstack([peak_right, peak_left])
 
                 # End video
-                # out.release()
-                # out_right.release()
-                # out_left.release()
+                if args.video_output:
+                    out.release()
 
                 # Write values to csv
                 matrix_to_csv(min_values, f"{f_name}_min_values")
                 matrix_to_csv(peak, f"{f_name}_peaks")
 
-                cv2.destroyAllWindows()
-                analyse(min_values, peak, f_name)
-                break
-
-            #######################
-            # Wait for keypresses #
-            #######################
-            key = cv2.waitKey(1)
-            # Press esc or 'q' to close the image window
-            if key & 0xFF == ord('q') or key == 27:
+                if not args.no_gui:
+                    cv2.destroyAllWindows()
+                analyse(min_values, peak, f_name, not args.no_gui)
                 break
 
     finally:

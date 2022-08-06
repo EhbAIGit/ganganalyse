@@ -170,7 +170,7 @@ def peakdet(v, delta, margin = 0, x = None):
 
     return array(maxtab), array(mintab)
 
-def main(min_values, peak, f_name):
+def main(min_values, peak, f_name, display_visual=True):
     min_values = np.array(min_values)
     peak = np.array(peak)
 
@@ -239,7 +239,6 @@ def main(min_values, peak, f_name):
     f.close()
 
     # Display Plot
-
     plt.plot(min_values[0], color="red", label="right foot")
     plt.plot(min_values[1], color="blue", label="left foot")
 
@@ -257,7 +256,9 @@ def main(min_values, peak, f_name):
     plt.legend(bbox_to_anchor=(0.5,-0.1,0.5,0.2),
                 mode="expand", borderaxespad=0, ncol=3)
     plt.savefig(f"graphs/{f_name}.png")
-    plt.show()
+    
+    if display_visual:
+        plt.show()
     plt.close()
 
 def get_csv(f_name):
