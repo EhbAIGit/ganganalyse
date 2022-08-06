@@ -64,3 +64,4 @@ wget https://github.com/TiboDeMunck/final-work/releases/download/1.0/final-work-
 unzip ./final-work-release.zip -d .
 cd ./final-work-release
 python3 -m pip install --upgrade -r requirements.txt
+echo -e "\e[92m\n\e[1mFinal work installation complete.\n\e[0m"

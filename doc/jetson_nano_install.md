@@ -3,14 +3,13 @@
 1. Make sure no RealSense device is connected
 2. Open the terminal, run:
 ```sh
-$ wget https://github.com/IntelRealSense/librealsense/raw/master/scripts/libuvc_installation.sh
-$ chmod +x ./libuvc_installation.sh
-$ ./libuvc_installation.sh
+$ wget https://github.com/TiboDeMunck/final-work/blob/main/doc/jetson_nano_install.sh
+$ chmod +x ./jetson_nano_install.sh
+$ ./jetson_nano_install.sh
 ```
-3. Wait until `Librealsense script completed` message is displayed (may take some time)
-4. Connect RealSense device
-5. Run `rs-enumerate-devices` from the terminal to verify the installation
+3. Wait untill "Final work installation complete"
+5. Connect RealSense device
+6. Run `rs-enumerate-devices` from the terminal to verify the RealSense installation
 
-> At the moment, the script assumes Ubuntu 16 with graphic subsystem
 
-> If you encounter any problems or would like to extend the script to additional system, please [let us know via a new GitHub issue](https://github.com/IntelRealSense/librealsense/issues/new)
+> At the moment, the script assumes Ubuntu 18 with graphic subsystem
