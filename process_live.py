@@ -289,9 +289,9 @@ def main():
                     out.write(original)
 
             except ValueError:
-                print("frame skipped")
+                pass
             except IndexError:
-                print("frame skipped")
+                pass
 
             cv2.imshow('Original', original)
 
@@ -303,6 +303,7 @@ def main():
             if key & 0xFF == ord('s'):
                 start_record = not start_record
                 if start_record == False:
+                    print("Recording Stopped")
                     min_values = np.vstack([min_right, min_left])
                     peak = np.vstack([peak_right, peak_left])
 
@@ -313,6 +314,8 @@ def main():
                     cv2.destroyAllWindows()
                     analyse(min_values, peak, "live")
                     break
+                else:
+                    print("Recording Started")
             
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
