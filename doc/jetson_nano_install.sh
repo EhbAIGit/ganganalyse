@@ -2,7 +2,7 @@
 
 echo installing python3.7
 sudo apt-get update
-sudo apt install python3.7-dev
+sudo apt install python3.7-dev -y
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
 
 echo installing pyrealsense

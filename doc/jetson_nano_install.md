@@ -12,4 +12,4 @@ $ ./jetson_nano_install.sh
 6. Run `rs-enumerate-devices` from the terminal to verify the RealSense installation
 
 
-> At the moment, the script assumes Ubuntu 18 with graphic subsystem
+> At the moment, the script assumes Jetson Nano jp461 - Ubuntu 18 with graphic subsystem
