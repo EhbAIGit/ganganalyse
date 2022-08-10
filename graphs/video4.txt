@@ -3,9 +3,11 @@
 ##############
 IC's Right Foot: [ 62 124 192 318]
 IC's Depth Right Foot: [332 280 314 379]
+Presw's Depth Left Foot: [669 631 624 641]
 ---
 IC's Left Foot: [ 34  96 163 229 285]
 IC's Depth Right Foot: [512 481 458 481 550]
+Presw's Depth Left Foot: [551 592 593 546 593]
 
 ##############################
 # Stride Distance & Duration #
