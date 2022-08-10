@@ -1,5 +1,6 @@
 # Math time
 import numpy as np
+from scipy import signal as sp
 import matplotlib.pyplot as plt
 import csv
 
@@ -133,97 +134,22 @@ def get_margin_for_valley(peaks, min_values):
     idx = np.argwhere(np.diff(np.sign(peaks[0] - peaks[1]))).flatten()
     
     # take average of min_values distance when the peaks overlap
-    average_distance = np.average(np.hstack([min_values[0][idx], min_values[1][idx]]))
+    average_distance = np.median(np.hstack([min_values[0][idx], min_values[1][idx]]))
     return average_distance
-
-# Edited script from https://gist.github.com/endolith/250860
-import sys
-from numpy import NaN, Inf, arange, isscalar, asarray, array
-def peakdet(v, delta, margin = 0, x = None):
-    """
-    Converted from MATLAB script at http://billauer.co.il/peakdet.html
-    
-    Returns two arrays
-    
-    function [maxtab, mintab]=peakdet(v, delta, x)
-    %PEAKDET Detect peaks in a vector
-    %        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
-    %        maxima and minima ("peaks") in the vector V.
-    %        MAXTAB and MINTAB consists of two columns. Column 1
-    %        contains indices in V, and column 2 the found values.
-    %      
-    %        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
-    %        in MAXTAB and MINTAB are replaced with the corresponding
-    %        X-values.
-    %
-    %        A point is considered a maximum peak if it has the maximal
-    %        value, and was preceded (to the left) by a value lower by
-    %        DELTA.
-    
-    % Eli Billauer, 3.4.05 (Explicitly not copyrighted).
-    % This function is released to the public domain; Any use is allowed.
-    
-    """
-    maxtab = []
-    mintab = []
-       
-    if x is None:
-        x = arange(len(v))
-    
-    v = asarray(v)
-    
-    if len(v) != len(x):
-        sys.exit('Input vectors v and x must have same length')
-    
-    if not isscalar(delta):
-        sys.exit('Input argument delta must be a scalar')
-    
-    if delta <= 0:
-        sys.exit('Input argument delta must be positive')
-    
-    mn, mx = Inf, -Inf
-    mnpos, mxpos = NaN, NaN
-    
-    lookformax = True
-    
-    for i in arange(len(v)):
-        this = v[i]
-        if this > mx:
-            mx = this
-            mxpos = x[i]
-        if this < mn:
-            mn = this
-            mnpos = x[i]
-        
-        if lookformax:
-            if this < mx-delta and this > margin:
-                maxtab.append((mxpos, mx))
-                mn = this
-                mnpos = x[i]
-                lookformax = False
-        else:
-            if this > mn+delta and this < margin:
-                mintab.append((mnpos, mn))
-                mx = this
-                mxpos = x[i]
-                lookformax = True
-
-    return array(maxtab), array(mintab)
 
 def main(min_values, peak, f_name, display_visual=True):
     min_values = np.array(min_values)
     peak = np.array(peak)
 
-    margin = get_margin_for_valley(peak, min_values)
 
-    _, valley_right_min = peakdet(min_values[0], 1, margin)
-    _, valley_left_min = peakdet(min_values[1], 1, margin)
+    min_values_invert = min_values * -1
 
-    valley_right_x = np.array(valley_right_min[:, 0]).astype(int)
-    valley_left_x = np.array(valley_left_min[:, 0]).astype(int)
+    margin = get_margin_for_valley(peak, min_values_invert)
+    valley_right_x, _ = sp.find_peaks(min_values_invert[0], height=margin, width=10)
+    valley_left_x, _ = sp.find_peaks(min_values_invert[1], height=margin, width=10)
 
-    valley_right_y = np.array(valley_right_min[:, 1])
-    valley_left_y = np.array(valley_left_min[:, 1])
+    valley_right_y = min_values[0][valley_right_x]
+    valley_left_y = min_values[1][valley_left_x]
 
     if np.min(valley_left_x) < np.min(valley_right_x): # select the foot that has first IC
         # If this is the left foot
@@ -321,6 +247,6 @@ def get_csv(f_name):
     return min_values, peaks
 
 if __name__ == "__main__":
-    f_name = "video1"
+    f_name = "live"
     min_value, peak = get_csv(f_name)
     main(min_value, peak, f_name)
