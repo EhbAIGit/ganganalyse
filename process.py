@@ -115,6 +115,12 @@ def main():
                     vault.peak_right.append(peak_values[0])
                     vault.peak_left.append(peak_values[1])
 
+                    if args.video_output:
+                        ##################
+                        # Write to video #
+                        ##################
+                        recorder.write(frame.original)
+
                 if not args.no_gui:
                     #################
                     # Render images #
@@ -129,11 +135,6 @@ def main():
                     left_leg_window.display(frame.left_leg_color)
                     right_leg_window.display(frame.right_leg_color)
 
-                if args.video_output:
-                    ##################
-                    # Write to video #
-                    ##################
-                    recorder.write(frame.original)
             except ValueError:
                 pass
             except IndexError:
