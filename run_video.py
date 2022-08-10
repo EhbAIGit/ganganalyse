@@ -99,7 +99,7 @@ try:
             break
         if key == 2424832:
             j = 0
-            total_frames = 367
+            total_frames = 172
             while j < total_frames - 2:
                 frames = pipeline.wait_for_frames()
                 j += 1
