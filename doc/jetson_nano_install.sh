@@ -5,6 +5,7 @@ sudo apt-get update
 sudo apt install python3.7-dev -y
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
 
+# https://raw.githubusercontent.com/IntelRealSense/librealsense/master/scripts/libuvc_installation.sh
 echo installing pyrealsense
 #Locally suppress stderr to avoid raising not relevant messages
 exec 3>&2

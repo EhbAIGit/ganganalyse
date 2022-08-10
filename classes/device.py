@@ -15,6 +15,7 @@ class Device:
         return pipeline
 
     def get_live_pipeline(self, pipeline):
+        # https://github.com/IntelRealSense/librealsense/blob/master/wrappers/python/examples/align-depth2color.py
         config = rs.config()
         
         # Get device product line for setting a supporting resolution
@@ -43,6 +44,7 @@ class Device:
         profile = pipeline.start(config)
 
     def get_video_pipeline(self, pipeline, f_name):
+        # https://github.com/IntelRealSense/librealsense/blob/master/wrappers/python/examples/read_bag_example.py
         config = rs.config()
 
         # Tell config that we will use a recorded device from file to be used by the pipeline through playback.

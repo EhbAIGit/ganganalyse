@@ -19,6 +19,7 @@ def remove_ground(matrix):
 
 # remove all values larger than certain value
 def remove_background(matrix):
+    # https://github.com/IntelRealSense/librealsense/blob/master/wrappers/python/examples/align-depth2color.py
     # Getting the depth sensor's depth scale (see rs-align example for explanation)
     depth_scale = 0.0010000000474974513
 
