@@ -140,8 +140,7 @@ def get_margin_for_valley(peaks, min_values):
 def main(min_values, peak, f_name, display_visual=True):
     min_values = np.array(min_values)
     peak = np.array(peak)
-
-
+    
     min_values_invert = min_values * -1
 
     margin = get_margin_for_valley(peak, min_values_invert)
