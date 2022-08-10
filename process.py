@@ -10,7 +10,7 @@ from classes.vault import Vault
 from classes.frame import Frame
 from classes.clean import *
 from classes.signal import *
-from classes.analyse import analyse
+from analyse_file import main as analyse
 import cv2
 
 # Streaming loop
