@@ -6,8 +6,8 @@ IC's Depth Right Foot (mm): [332. 280. 314. 379.]
 Presw's Depth Left Foot (mm): [669. 631. 624. 641.]
 ---
 IC's Left Foot (frame): [ 34  96 163 229 285]
-IC's Depth Right Foot (mm): [512. 481. 458. 481. 550.]
-Presw's Depth Left Foot (mm): [551. 592. 593. 546. 593.]
+IC's Depth Left Foot (mm): [512. 481. 458. 481. 550.]
+Presw's Depth Right Foot (mm): [551. 592. 593. 546. 593.]
 
 ##############################
 # Stride Distance & Duration #
