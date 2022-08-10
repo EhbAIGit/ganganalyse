@@ -11,7 +11,7 @@ class Video:
         elif "video2.bag" in input: # Normal walking
             return 307, 190
         elif "video3.bag" in input: # Limp walking
-            return 364, 10
+            return 356, 10
         elif "video4.bag" in input: # Limp walking female
             return 367, 10
         elif "video5.bag" in input: # Reflective ground

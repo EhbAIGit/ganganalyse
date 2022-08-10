@@ -36,7 +36,6 @@ if os.path.splitext(args.input)[1] != ".bag":
 def matrix_to_csv(matrix, filename):
     np.savetxt(filename, matrix, delimiter=';', fmt='%i')
 
-
 try:
     # Create pipeline
     pipeline = rs.pipeline()
@@ -52,10 +51,14 @@ try:
     config.enable_stream(rs.stream.depth, rs.format.z16, 30)
 
     # Start streaming from file
-    pipeline.start(config)
+    profile = pipeline.start(config)
+
+    playback = profile.get_device().as_playback()
+    playback.set_real_time(False)
 
     # Create opencv window to render image in
     cv2.namedWindow("Depth Stream", cv2.WINDOW_AUTOSIZE)
+    cv2.resizeWindow('Depth Stream', 1920, 1440)
     
     # Create colorizer object
     colorizer = rs.colorizer()
@@ -73,7 +76,13 @@ try:
 
         # Get depth frame
         depth_frame = frames.get_depth_frame()
+        depth_image = np.asanyarray(depth_frame.get_data())
 
+        def mouse_callback(event, x, y, flags, params):
+            if event == 1:
+                print(f"coords {x, y}, {depth_image[y, x]}")
+
+        cv2.setMouseCallback("Depth Stream", mouse_callback)
         # Colorize depth frame to jet colormap
         depth_color_frame = colorizer.colorize(depth_frame)
 
@@ -83,22 +92,27 @@ try:
         # Render image in opencv window
         cv2.imshow("Depth Stream", depth_color_image)
         # out.write(depth_color_image)
-        key = cv2.waitKey(1)
+        key = cv2.waitKeyEx(0)
         # if pressed escape exit program
         if key == 27:
             cv2.destroyAllWindows()
             break
+        if key == 2424832:
+            j = 0
+            total_frames = 367
+            while j < total_frames - 2:
+                frames = pipeline.wait_for_frames()
+                j += 1
+            i -= 2
 
         # Print depth_image matrix to csv
         if key & 0xFF == ord('a'):
-            matrix_to_csv(depth_frame.get_data(), "matrix.csv")
+            matrix_to_csv(depth_image, "matrix.csv")
 
         # if i == 96 or i == 243 or i == 170 or i == 306:
         #     matrix_to_csv(depth_frame.get_data(), f"matrix_{i}.csv")
 
         i = i + 1
-        if i == 307:
-            break
     # out.release()
     cv2.destroyAllWindows()
 
