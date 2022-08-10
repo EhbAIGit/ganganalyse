@@ -14,6 +14,8 @@ import argparse
 # Import os.path for file path manipulation
 import os.path
 
+from classes.video import Video
+
 # Create object for parsing command-line options
 parser = argparse.ArgumentParser(description="Read recorded bag file and display depth stream in jet colormap.\
                                 Remember to change the stream fps and format to match the recorded.")
@@ -31,6 +33,8 @@ if os.path.splitext(args.input)[1] != ".bag":
     print("The given file is not of correct file format.")
     print("Only .bag files are accepted")
     exit()
+
+video = Video(args.input)
 
 
 def matrix_to_csv(matrix, filename):
@@ -69,8 +73,12 @@ try:
 
     i = 0
     # Streaming loop
+    while i % video.total_frames < video.frame_skip:
+        # Get frameset of color and depth
+        pipeline.wait_for_frames()
+        i += 1
     while True:
-        print (i)
+        print (i - video.frame_skip)
         # Get frameset of depth
         frames = pipeline.wait_for_frames()
 
@@ -99,8 +107,7 @@ try:
             break
         if key == 2424832:
             j = 0
-            total_frames = 172
-            while j < total_frames - 2:
+            while j < video.total_frames - 2:
                 frames = pipeline.wait_for_frames()
                 j += 1
             i -= 2
