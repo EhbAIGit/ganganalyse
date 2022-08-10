@@ -1,32 +1,31 @@
 ##############
 # Raw Values #
 ##############
-IC's Right Foot (frame): [ 74  86 147]
-IC's Depth Right Foot (mm): [345. 272. 348.]
-Presw's Depth Left Foot (mm): [660. 748. 693.]
+IC's Right Foot (frame): [ 74 139]
+IC's Depth Right Foot (mm): [283 326]
+Presw's Depth Left Foot (mm): [347 394]
 ---
-IC's Left Foot (frame): [ 33 109 189]
-IC's Depth Left Foot (mm): [292. 365. 390.]
-Presw's Depth Right Foot (mm): [758. 731. 819.]
+IC's Left Foot (frame): [ 43 108 166]
+IC's Depth Left Foot (mm): [264 346 191]
+Presw's Depth Right Foot (mm): [634 661 666]
 
 ##############################
 # Stride Distance & Duration #
 ##############################
-Stride distance(s) right foot (mm): [781. 842. 774.]
-Stride duration(s) right foot (ms): [400, 2033]
-Stride step to distance(s) right foot (mm): [ 53. -93. -42.]
-Stride step to duration(s) right foot (ms): [ 1366.66666667  -766.66666667 -1400.        ]
+Stride distance(s) right foot (mm): [434 383]
+Stride duration(s) right foot (ms): [2167]
+Stride step to distance(s) right foot (mm): [   19 65516]
+Stride step to duration(s) right foot (ms): [1033.33333333 1033.33333333]
 ---
-Stride distance(s) left foot (mm): [681. 905.]
-Stride duration(s) left foot (ms): [2533, 2667]
-Stride step to distance(s) left foot (mm): [ 20. 118.]
-Stride step to duration(s) left foot (ms): [1166.66666667 3433.33333333]
+Stride distance(s) left foot (mm): [379 543]
+Stride duration(s) left foot (ms): [2167, 1933]
+Stride step to distance(s) left foot (mm): [   63 65401]
+Stride step to duration(s) left foot (ms): [1133.33333333  900.        ]
 
 ###################
 # Stride Analysis #
 ###################
-IC difference duration (ms): -2566.6666666666665
-Potential limp right leg
+IC difference duration (ms): 16.666666666666856
 ---
-IC difference distance (mm): -27.333333333333314
-Potential limp left leg
+IC difference distance (mm): 37.5
+Potential limp right leg
