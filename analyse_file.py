@@ -256,6 +256,6 @@ def get_csv(f_name):
     return min_values, peaks
 
 if __name__ == "__main__":
-    f_name = "video1"
+    f_name = "live"
     min_value, peak = get_csv(f_name)
     main(min_value, peak, f_name)
