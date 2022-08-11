@@ -1,16 +1,22 @@
 import numpy as np
+import pyrealsense2 as rs
 import cv2
 
 class Frame:
     def __init__(self, frame) -> None:
         self.frame = frame
+
+        self.spatial = rs.spatial_filter(0.5, 20, 2, 0) #Spatial filter smooths the image by calculating frame with alpha and delta settings.  Alpha defines the weight of the current pixel for smoothing, and is bounded within [25..100]%. Delta defines the depth gradient below which the smoothing will occur as number of depth levels.
+        self.temporal = rs.temporal_filter(.4, 20, 3) #Temporal filter smooths the image by calculating multiple frames with alpha and delta settings. Alpha defines the weight of current frame, and delta defines thethreshold for edge classification and preserving.
+
         self.depth_image = self.setup(frame)
     
     def setup(self, frame):
         # Get depth frame
         depth_frame = frame.get_depth_frame()
+        depth_frame = self.spatial.process(depth_frame)
+        depth_frame = self.temporal.process(depth_frame)
         depth_image = np.asanyarray(depth_frame.get_data())
-
         return depth_image
 
     def colorize_depth(self, image):
