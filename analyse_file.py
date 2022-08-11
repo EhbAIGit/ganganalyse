@@ -218,6 +218,16 @@ def main(min_values, peak, f_name, display_visual=True):
     plt.scatter(valley_left_x, valley_left_y, color="yellow")
     plt.scatter(valley_left_x, min_values[0][valley_left_x], color="yellow")
 
+    valleys_x = np.hstack([valley_right_x, valley_left_x])
+    valleys_y = np.hstack([valley_right_y, valley_left_y])
+
+    arrlinds = valleys_x.argsort()
+    sorted_x = valleys_x[arrlinds]
+    sorted_y = valleys_y[arrlinds]
+
+    for i in range(len(sorted_x)):
+        plt.annotate(f"IC {i + 1}", xy=(sorted_x[i], sorted_y[i]), xytext=(sorted_x[i] + 3, sorted_y[i] - 25))
+
     plt.plot([valley_right_x, valley_right_x], [valley_right_y, min_values[1][valley_right_x]], color="yellow")
     plt.plot([valley_left_x, valley_left_x], [valley_left_y, min_values[0][valley_left_x]], color="yellow")
 
@@ -246,6 +256,6 @@ def get_csv(f_name):
     return min_values, peaks
 
 if __name__ == "__main__":
-    f_name = "live"
+    f_name = "video1"
     min_value, peak = get_csv(f_name)
     main(min_value, peak, f_name)
