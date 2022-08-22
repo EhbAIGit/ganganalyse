@@ -75,9 +75,9 @@ def get_time_difference(first, second):
     time_differences = []
     for i in range(len(second_times)):
         if i % 2 == 0:
-            time_differences.append(second_times[i] - first_times[i])
+            time_differences.append(int(second_times[i]) - int(first_times[i]))
         else:
-            time_differences.append(first_times[i] - second_times[i])
+            time_differences.append(int(first_times[i]) - int(second_times[i]))
 
     time_differences = np.array(time_differences) / 30 * 1000
 
@@ -115,9 +115,9 @@ def get_distance_difference(first, second):
     distance_differences = []
     for i in range(len(second_times)):
         if i % 2 == 0:
-            distance_differences.append(second_times[i] - first_times[i])
+            distance_differences.append(int(second_times[i]) - int(first_times[i]))
         else:
-            distance_differences.append(first_times[i] - second_times[i])
+            distance_differences.append(int(first_times[i]) - int(second_times[i]))
 
     distance_differences = np.array(distance_differences)
 

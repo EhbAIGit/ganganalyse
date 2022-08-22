@@ -2,24 +2,24 @@
 # Raw Values #
 ##############
 IC's Right Foot (frame): [20 67]
-IC's Depth Right Foot (mm): [416. 215.]
-Presw's Depth Left Foot (mm): [930. 719.]
+IC's Depth Right Foot (mm): [416 215]
+Presw's Depth Left Foot (mm): [930 719]
 ---
 IC's Left Foot (frame): [47 90]
-IC's Depth Left Foot (mm): [309. 333.]
-Presw's Depth Right Foot (mm): [808. 735.]
+IC's Depth Left Foot (mm): [309 333]
+Presw's Depth Right Foot (mm): [808 735]
 
 ##############################
 # Stride Distance & Duration #
 ##############################
-Stride distance(s) right foot (mm): [1003.]
+Stride distance(s) right foot (mm): [1003]
 Stride duration(s) right foot (ms): [1567]
-Stride step to distance(s) right foot (mm): [-94.]
+Stride step to distance(s) right foot (mm): [-94]
 Stride step to duration(s) right foot (ms): [666.66666667]
 ---
-Stride distance(s) left foot (mm): [1013.  906.]
+Stride distance(s) left foot (mm): [1013  906]
 Stride duration(s) left foot (ms): [1433]
-Stride step to distance(s) left foot (mm): [-107.  118.]
+Stride step to distance(s) left foot (mm): [-107  118]
 Stride step to duration(s) left foot (ms): [900.         766.66666667]
 
 ###################
