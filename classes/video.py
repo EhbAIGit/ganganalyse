@@ -17,7 +17,7 @@ class Video:
         elif "video5.bag" in input: # Reflective ground
             return 270, 10
         else:
-            return 130, 10
+            return 130, 5
     
     def get_name(self, input):
         return os.path.basename(input)[:-4] # Get base name, remove extention
