@@ -8,7 +8,7 @@
 
 * Output: Finally, the analysis results could be presented in various forms, such as graphs, numerical data, or visual overlays on the video, to demonstrate the gait characteristics.
 
-The project's Python scripts likely cover these different aspects, with each script handling specific tasks like video recording (record_video.py), calibration (calibrate.py), processing raw data (process.py), and analyzing the gait characteristics (analyse_file.py).
+The project's Python scripts covers these different aspects, with each script handling specific tasks like video recording (record_video.py), calibration (calibrate.py), processing raw data (process.py), and analyzing the gait characteristics (analyse_file.py).
 
 
 *** Originally created by Tibo De Munck
